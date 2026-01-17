@@ -119,6 +119,17 @@ export class DatabaseStorage implements IStorage {
       isActive: true,
     });
 
+    await this.createProgram({
+      name: "River Conservation Workshop",
+      description: "Learn about river ecosystems and conservation efforts. Participate in stream cleanup activities and habitat restoration. Perfect for those who want to give back to nature.",
+      startDate: "2026-03-15",
+      endDate: "2026-06-15",
+      schedule: "First Saturday of each month 9:00 AM - 12:00 PM",
+      price: 50,
+      capacity: 30,
+      isActive: true,
+    });
+
     await this.createRegistration({
       firstName: "Sarah",
       lastName: "Johnson",
