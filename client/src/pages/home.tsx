@@ -47,7 +47,7 @@ export default function Home() {
               </p>
               <div className="flex flex-wrap gap-4 pt-4">
                 <Link href="/register">
-                  <Button size="lg" className="bg-[#ff6900] hover:bg-[#e55f00] border-[#ff6900]" data-testid="button-join-program">
+                  <Button size="lg" className="bg-[#c73e1d] hover:bg-[#a8331a] border-[#c73e1d]" data-testid="button-join-program">
                     Join Our Program
                   </Button>
                 </Link>
@@ -125,7 +125,7 @@ export default function Home() {
                           <span>{event.location}</span>
                         </div>
                         <div className="pt-2">
-                          <Button size="sm" className="w-full bg-[#ff6900] hover:bg-[#e55f00] border-[#ff6900]" data-testid={`button-register-event-${event.id}`}>
+                          <Button size="sm" className="w-full bg-[#c73e1d] hover:bg-[#a8331a] border-[#c73e1d]" data-testid={`button-register-event-${event.id}`}>
                             Register Now
                           </Button>
                         </div>
@@ -272,7 +272,7 @@ export default function Home() {
                       <div className="flex items-center justify-between pt-2">
                         <span className="text-lg font-bold text-primary">${program.price}</span>
                         <Link href={`/register?program=${program.id}`}>
-                          <Button size="sm" className="bg-[#ff6900] hover:bg-[#e55f00] border-[#ff6900]" data-testid={`button-register-program-${program.id}`}>
+                          <Button size="sm" className="bg-[#c73e1d] hover:bg-[#a8331a] border-[#c73e1d]" data-testid={`button-register-program-${program.id}`}>
                             Register
                           </Button>
                         </Link>
@@ -332,14 +332,14 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="py-16 lg:py-24 bg-[#ff6900] text-white">
+        <section className="py-16 lg:py-24 bg-[#c73e1d] text-white">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-2xl md:text-3xl font-bold mb-4">Ready to Get Started?</h2>
             <p className="text-white/80 max-w-xl mx-auto mb-8">
               Connect with us and start your journey. Reach out and we'll be in touch to connect you with our programs.
             </p>
             <Link href="/register">
-              <Button size="lg" variant="secondary" className="text-[#ff6900]" data-testid="button-cta-register">
+              <Button size="lg" variant="secondary" className="text-[#c73e1d]" data-testid="button-cta-register">
                 Join Our Program
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
