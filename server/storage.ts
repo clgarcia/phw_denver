@@ -47,65 +47,65 @@ export class DatabaseStorage implements IStorage {
 
   private async seedData() {
     const event1 = await this.createEvent({
-      title: "Spring Community Festival",
-      description: "Join us for our annual spring celebration featuring live music, local food vendors, games, and activities for the whole family. Come connect with neighbors and celebrate the season!",
-      date: "2026-03-15",
-      time: "10:00",
-      location: "Central Park Pavilion",
-      capacity: 200,
+      title: "Fly Fishing Show",
+      description: "Visit our booth at the convention center. Learn about fly fishing techniques, meet experienced anglers, and discover the latest gear. Military discounts available for admission.",
+      date: "2026-02-21",
+      time: "09:00",
+      location: "Mountain View Convention Center",
+      capacity: 150,
       isActive: true,
     });
     
     const event2 = await this.createEvent({
-      title: "Tech Talk: AI in Education",
-      description: "An informative session exploring how artificial intelligence is transforming education. Learn about the latest tools and methodologies being used in classrooms today.",
-      date: "2026-02-20",
-      time: "18:30",
-      location: "Community Learning Center",
+      title: "Volunteer Appreciation Meeting",
+      description: "Join us for our annual volunteer appreciation meeting. See our 2026 plans and celebrate volunteer service contributions. Lunch will be catered.",
+      date: "2026-02-01",
+      time: "11:00",
+      location: "Community Library, Main Hall",
       capacity: 75,
       isActive: true,
     });
     
     await this.createEvent({
-      title: "Wellness Workshop: Stress Management",
-      description: "A hands-on workshop teaching practical techniques for managing stress in daily life. Includes guided meditation, breathing exercises, and take-home resources.",
-      date: "2026-02-28",
-      time: "14:00",
-      location: "Wellness Center Room 101",
-      capacity: 30,
+      title: "Spring River Outing",
+      description: "A guided fly fishing trip on the beautiful Clear Creek. All skill levels welcome. Equipment provided for those who need it. Learn casting techniques and enjoy nature.",
+      date: "2026-03-15",
+      time: "07:00",
+      location: "Clear Creek State Park",
+      capacity: 20,
       isActive: true,
     });
 
     const program1 = await this.createProgram({
-      name: "Youth Leadership Academy",
-      description: "An 8-week program designed to develop leadership skills in young people ages 14-18. Participants learn communication, teamwork, and project management through hands-on activities.",
+      name: "Fly Fishing Fundamentals",
+      description: "An 8-week program teaching the basics of fly fishing. Learn casting, fly selection, knot tying, and river reading. Perfect for beginners wanting to start their fly fishing journey.",
       startDate: "2026-03-01",
       endDate: "2026-04-26",
-      schedule: "Saturdays 9:00 AM - 12:00 PM",
+      schedule: "Saturdays 8:00 AM - 11:00 AM",
       price: 150,
-      capacity: 25,
+      capacity: 15,
       isActive: true,
     });
     
     await this.createProgram({
-      name: "Creative Arts Workshop Series",
-      description: "Explore your creativity through various art forms including painting, sculpture, and mixed media. No prior experience necessary - all materials provided.",
+      name: "Fly Tying Workshop Series",
+      description: "Learn the art of fly tying from experienced craftsmen. Create your own flies to use on the water. All materials provided. No prior experience necessary.",
       startDate: "2026-02-15",
       endDate: "2026-05-15",
       schedule: "Wednesdays 6:00 PM - 8:00 PM",
-      price: 200,
-      capacity: 20,
+      price: 100,
+      capacity: 12,
       isActive: true,
     });
     
     await this.createProgram({
-      name: "Fitness Fundamentals",
-      description: "A comprehensive fitness program for beginners. Learn proper form, develop workout routines, and build healthy habits with certified trainers.",
+      name: "Outdoor Wellness Program",
+      description: "Combine the healing power of nature with mindfulness practices. Weekly outdoor sessions include hiking, meditation by the water, and gentle nature walks.",
       startDate: "2026-02-01",
-      endDate: "2026-03-31",
-      schedule: "Mon/Wed/Fri 7:00 AM - 8:00 AM",
-      price: 99,
-      capacity: 15,
+      endDate: "2026-04-30",
+      schedule: "Mon/Wed 7:00 AM - 8:30 AM",
+      price: 75,
+      capacity: 20,
       isActive: true,
     });
 
