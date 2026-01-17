@@ -71,7 +71,7 @@ export default function Home() {
                 fly fishing, fly casting, fly tying, and rod building, participants experience nature's restorative 
                 healing powers while building camaraderie, connectedness, and community—directly increasing their 
                 sense of belonging, resilience, and post-traumatic growth. See{" "}
-                <a href="https://projecthealingwaters.org" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                <a href="https://projecthealingwaters.org" target="_blank" rel="noopener noreferrer" className="text-[#c73e1d] hover:underline">
                   projecthealingwaters.org
                 </a>{" "}
                 for more information.
