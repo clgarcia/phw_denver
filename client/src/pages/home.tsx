@@ -9,7 +9,7 @@ import type { Event, Program } from "@shared/schema";
 import heroImage from "@assets/stock_images/fly_fishing_outdoor__e6919c4b.jpg";
 import activityImage1 from "@assets/stock_images/fly_fishing_outdoor__104c4098.jpg";
 import activityImage2 from "@assets/stock_images/fly_fishing_outdoor__02f9483b.jpg";
-import volunteerImage from "@assets/stock_images/group_of_people_volu_637ca4b2.jpg";
+import volunteerImage from "@assets/stock_images/male_veterans_volunt_6db6d3fe.jpg";
 
 export default function Home() {
   const { data: events = [], isLoading: eventsLoading } = useQuery<Event[]>({
