@@ -66,9 +66,10 @@ export default function Home() {
             <div className="max-w-3xl mx-auto text-center space-y-6">
               <h2 className="text-2xl md:text-3xl font-bold" data-testid="text-mission-title">Our Mission</h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                We believe in the healing power of nature and community. Our programs bring people together 
-                through outdoor activities like fly fishing, hiking, and wilderness experiences. 
-                We create safe spaces for connection, growth, and healing through shared adventures in the great outdoors.
+                We are a leading nonprofit using fly fishing as therapeutic intervention for active military and Veterans. 
+                Through our curriculum of fly fishing, fly casting, fly tying, and rod building, participants experience 
+                nature's restorative healing powers while building camaraderie, connectedness, and community—directly 
+                increasing their sense of belonging, resilience, and post-traumatic growth.
               </p>
             </div>
           </div>
