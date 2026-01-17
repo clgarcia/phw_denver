@@ -76,6 +76,16 @@ export class DatabaseStorage implements IStorage {
       isActive: true,
     });
 
+    await this.createEvent({
+      title: "Veterans Casting Clinic",
+      description: "A hands-on casting clinic designed for veterans of all experience levels. Learn proper casting techniques from certified instructors. All equipment provided.",
+      date: "2026-04-05",
+      time: "10:00",
+      location: "Riverside Park Pavilion",
+      capacity: 25,
+      isActive: true,
+    });
+
     const program1 = await this.createProgram({
       name: "Fly Fishing Fundamentals",
       description: "An 8-week program teaching the basics of fly fishing. Learn casting, fly selection, knot tying, and river reading. Perfect for beginners wanting to start their fly fishing journey.",
