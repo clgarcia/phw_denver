@@ -1,4 +1,4 @@
-import { Calendar, Mail, MapPin, Phone } from "lucide-react";
+import { Waves, Mail, MapPin, Phone } from "lucide-react";
 import { Link } from "wouter";
 
 export function Footer() {
@@ -9,12 +9,12 @@ export function Footer() {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-                <Calendar className="h-5 w-5 text-primary-foreground" />
+                <Waves className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-semibold">EventHub</span>
+              <span className="text-xl font-semibold">Healing Waters</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Your trusted partner for event coordination and program management.
+              Connecting people through the healing power of nature and outdoor experiences.
             </p>
           </div>
 
@@ -62,7 +62,7 @@ export function Footer() {
         </div>
 
         <div className="mt-12 pt-8 border-t text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} EventHub. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Healing Waters. All rights reserved.</p>
         </div>
       </div>
     </footer>

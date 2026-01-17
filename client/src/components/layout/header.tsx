@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Calendar, Menu, X } from "lucide-react";
+import { Waves, Menu, X } from "lucide-react";
 import { useState } from "react";
 
 export function Header() {
@@ -11,7 +11,7 @@ export function Header() {
     { href: "/", label: "Home" },
     { href: "/events", label: "Events" },
     { href: "/programs", label: "Programs" },
-    { href: "/register", label: "Register" },
+    { href: "/register", label: "Join Us" },
   ];
 
   const isActive = (href: string) => {
@@ -24,9 +24,9 @@ export function Header() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <Calendar className="h-5 w-5 text-primary-foreground" />
+            <Waves className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="text-xl font-semibold" data-testid="text-logo">EventHub</span>
+          <span className="text-xl font-semibold" data-testid="text-logo">Healing Waters</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
