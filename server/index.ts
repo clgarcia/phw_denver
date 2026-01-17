@@ -59,7 +59,10 @@ app.use((req, res, next) => {
   next();
 });
 
+import { storage } from "./storage";
+
 (async () => {
+  await storage.initializeDatabase();
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
