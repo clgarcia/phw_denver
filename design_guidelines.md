@@ -1,25 +1,25 @@
-# Design Guidelines: Event Coordination & Admin Platform
+# Design Guidelines: Event Coordination Platform
 
 ## Design Approach
-**Framework**: Modern professional design with clean lines and clear hierarchy
-**Color Scheme**: Deep blue primary with warm accent colors for approachability
+**Framework**: Nature-inspired, warm and welcoming design focused on community and outdoor activities
+**Color Scheme**: Olive/forest green primary with warm earth tones for approachability
 
 ## Color Palette
 
 ### Primary Colors
-- **Primary Blue**: #2563EB (Professional, trustworthy)
+- **Primary Olive Green**: #4A5D23 (Nature, outdoors, healing)
 - **Primary Foreground**: White text on primary
 
 ### Accent Colors  
-- **Accent**: Soft blue-gray for subtle highlights
+- **Accent Warm Brown**: Soft earth tones for subtle highlights
 - **Success Green**: For confirmed registrations
 - **Warning Amber**: For pending items
 
 ### Neutral Colors
 - **Background**: Clean white (#FFFFFF)
-- **Card Background**: Slightly off-white (#FAFAFA)
-- **Text Primary**: Near black (#0F172A)
-- **Text Secondary**: Gray (#64748B)
+- **Card Background**: Slightly off-white (#F9FAFB)
+- **Text Primary**: Near black (#1F2937)
+- **Text Secondary**: Gray (#6B7280)
 
 ## Typography
 - **Primary Font**: Inter (clean, professional)
@@ -35,7 +35,7 @@
 - Consistent padding (p-6)
 
 ### Buttons
-- Primary: Solid blue background
+- Primary: Solid olive green background
 - Secondary: Outlined style
 - Icon buttons for actions
 
@@ -53,8 +53,10 @@
 
 ### Public Pages
 - Clean header with navigation
-- Hero sections for main messaging
+- Hero sections with nature imagery
 - Card grids for event listings
+- Mission statement section
+- Volunteer opportunities
 - Footer with contact info
 
 ### Admin Dashboard
