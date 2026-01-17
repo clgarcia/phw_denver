@@ -20,10 +20,10 @@ export default function Home() {
     queryKey: ["/api/programs"],
   });
 
-  const upcomingEvents = events.filter((e: Event) => e.isActive).slice(0, 3);
+  const upcomingEvents = events.filter((e: Event) => e.isActive).slice(0, 4);
   const activePrograms = programs.filter((p: Program) => p.isActive).slice(0, 3);
 
-  const eventImages = [activityImage1, activityImage2, heroImage];
+  const eventImages = [activityImage1, activityImage2, heroImage, activityImage1];
 
   return (
     <div className="min-h-screen flex flex-col">
