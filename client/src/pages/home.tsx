@@ -89,8 +89,8 @@ export default function Home() {
             </div>
 
             {eventsLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3].map((i) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[1, 2, 3, 4].map((i) => (
                   <Card key={i} className="animate-pulse">
                     <div className="h-48 bg-muted rounded-t-lg" />
                     <CardHeader>
@@ -101,7 +101,7 @@ export default function Home() {
                 ))}
               </div>
             ) : upcomingEvents.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {upcomingEvents.map((event, index) => (
                   <Link key={event.id} href={`/events/${event.id}`}>
                     <Card className="group h-full hover-elevate cursor-pointer transition-all duration-200 overflow-hidden">
@@ -242,8 +242,8 @@ export default function Home() {
             </div>
 
             {programsLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3].map((i) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[1, 2, 3, 4].map((i) => (
                   <Card key={i} className="animate-pulse">
                     <CardHeader>
                       <div className="h-6 bg-muted rounded w-3/4" />
@@ -253,7 +253,7 @@ export default function Home() {
                 ))}
               </div>
             ) : activePrograms.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {activePrograms.map((program) => (
                   <Card key={program.id} className="h-full hover-elevate transition-all duration-200">
                     <CardHeader>
