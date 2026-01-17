@@ -1,5 +1,6 @@
-import { Waves, Mail, MapPin, Phone } from "lucide-react";
+import { Mail, MapPin, Phone } from "lucide-react";
 import { Link } from "wouter";
+import logoImage from "@assets/PHW_denverLogo1_transparent_1768667042398.png";
 
 export function Footer() {
   return (
@@ -8,13 +9,11 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-                <Waves className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-semibold">Healing Waters</span>
+              <img src={logoImage} alt="Project Healing Waters" className="h-10 w-auto" />
+              <span className="text-lg font-semibold">Project Healing Waters - DENVER</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Connecting people through the healing power of nature and outdoor experiences.
+              Dedicated to the physical and emotional rehabilitation of disabled active military service personnel and veterans through fly fishing and outdoor activities.
             </p>
           </div>
 
@@ -62,7 +61,7 @@ export function Footer() {
         </div>
 
         <div className="mt-12 pt-8 border-t text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Healing Waters. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Project Healing Waters - Denver. All rights reserved.</p>
         </div>
       </div>
     </footer>
