@@ -12,6 +12,15 @@ import activityImage2 from "@assets/stock_images/fly_fishing_outdoor__02f9483b.j
 import volunteerImage from "@assets/Volunteer_pic_1768761271488.png";
 import tripCoordinatorImage from "@assets/tripCoordinator_pic_1768761876957.png";
 
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+}
+
 export default function Home() {
   const { data: events = [], isLoading: eventsLoading } = useQuery<Event[]>({
     queryKey: ["/api/events"],
@@ -120,7 +129,7 @@ export default function Home() {
                         />
                       </div>
                       <CardHeader>
-                        <div className="text-sm text-primary font-medium mb-1">{event.date}</div>
+                        <div className="text-sm text-primary font-medium mb-1">{formatDate(event.date)}</div>
                         <CardTitle className="group-hover:text-primary transition-colors" data-testid={`text-event-title-${event.id}`}>
                           {event.title}
                         </CardTitle>
@@ -270,7 +279,7 @@ export default function Home() {
                     <CardContent className="space-y-3">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="h-4 w-4" />
-                        <span>{program.startDate}</span>
+                        <span>{formatDate(program.startDate)}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Clock className="h-4 w-4" />
