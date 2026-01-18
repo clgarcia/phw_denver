@@ -34,6 +34,26 @@ export default function AdminDashboard() {
 
   const isLoading = eventsLoading || programsLoading || registrationsLoading;
 
+  // Combine events and programs for upcoming items
+  const upcomingItems = [
+    ...activeEvents.map(e => ({
+      id: e.id,
+      title: e.title,
+      date: e.date,
+      type: 'event' as const,
+      registeredCount: e.registeredCount,
+      capacity: e.capacity,
+    })),
+    ...activePrograms.map(p => ({
+      id: p.id,
+      title: p.name,
+      date: p.startDate,
+      type: 'program' as const,
+      registeredCount: p.registeredCount,
+      capacity: p.capacity,
+    })),
+  ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).slice(0, 4);
+
   const stats = [
     {
       title: "Active Events",
@@ -179,19 +199,14 @@ export default function AdminDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-4">
             <div>
-              <CardTitle className="text-lg">Upcoming Events</CardTitle>
-              <CardDescription>Events happening soon</CardDescription>
+              <CardTitle className="text-lg">Upcoming Events & Programs</CardTitle>
+              <CardDescription>Events and programs happening soon</CardDescription>
             </div>
-            <Link href="/admin/events">
-              <Button variant="outline" size="sm" data-testid="link-view-all-events">
-                View All
-              </Button>
-            </Link>
           </CardHeader>
           <CardContent>
-            {eventsLoading ? (
+            {(eventsLoading || programsLoading) ? (
               <div className="space-y-3">
-                {[1, 2, 3].map(i => (
+                {[1, 2, 3, 4].map(i => (
                   <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 animate-pulse">
                     <div className="h-10 w-10 rounded bg-muted" />
                     <div className="flex-1 space-y-2">
@@ -201,23 +216,27 @@ export default function AdminDashboard() {
                   </div>
                 ))}
               </div>
-            ) : activeEvents.length > 0 ? (
+            ) : upcomingItems.length > 0 ? (
               <div className="space-y-3">
-                {activeEvents.slice(0, 5).map((event) => (
+                {upcomingItems.map((item) => (
                   <div 
-                    key={event.id} 
+                    key={`${item.type}-${item.id}`} 
                     className="flex items-center gap-3 p-3 rounded-lg bg-muted/50"
-                    data-testid={`event-item-${event.id}`}
+                    data-testid={`upcoming-item-${item.type}-${item.id}`}
                   >
                     <div className="h-10 w-10 rounded bg-primary/10 flex items-center justify-center">
-                      <Calendar className="h-5 w-5 text-primary" />
+                      {item.type === 'event' ? (
+                        <Calendar className="h-5 w-5 text-primary" />
+                      ) : (
+                        <ClipboardList className="h-5 w-5 text-primary" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{event.title}</p>
-                      <p className="text-sm text-muted-foreground">{formatDate(event.date)}</p>
+                      <p className="font-medium truncate">{item.title}</p>
+                      <p className="text-sm text-muted-foreground">{formatDate(item.date)}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-medium">{event.registeredCount}/{event.capacity}</p>
+                      <p className="text-sm font-medium">{item.registeredCount}/{item.capacity}</p>
                       <p className="text-xs text-muted-foreground">registered</p>
                     </div>
                   </div>
@@ -226,9 +245,9 @@ export default function AdminDashboard() {
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>No active events</p>
+                <p>No upcoming events or programs</p>
                 <Link href="/admin/events">
-                  <Button variant="link" size="sm" className="mt-2">
+                  <Button variant="ghost" size="sm" className="mt-2">
                     Create your first event
                   </Button>
                 </Link>
