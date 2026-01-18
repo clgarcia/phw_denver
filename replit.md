@@ -70,3 +70,9 @@ Database tables:
 - **Vite**: Development server and build tool
 - **Drizzle Kit**: Database migration tooling
 - **tsx**: TypeScript execution for Node.js
+
+### Email Service
+- **Mailgun**: Transactional email service for registration confirmations
+- **Configuration**: Requires `MAILGUN_API_KEY` and `MAILGUN_DOMAIN` environment variables
+- **Email Module**: `server/email.ts` handles sending registration confirmation emails
+- **Note**: Not using Replit integration - configured manually with user's Mailgun credentials

@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertEventSchema, insertProgramSchema, insertRegistrationSchema } from "@shared/schema";
+import { sendRegistrationConfirmation } from "./email";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -180,6 +181,28 @@ export async function registerRoutes(
       if (registration.programId) {
         await storage.incrementProgramRegistration(registration.programId);
       }
+
+      let event = null;
+      let program = null;
+      
+      if (registration.eventId) {
+        event = await storage.getEvent(registration.eventId);
+      }
+      if (registration.programId) {
+        program = await storage.getProgram(registration.programId);
+      }
+
+      sendRegistrationConfirmation({
+        recipientEmail: registration.email,
+        recipientName: `${registration.firstName} ${registration.lastName}`,
+        participationType: registration.participationType || "participant",
+        eventTitle: event?.title,
+        eventDate: event?.date,
+        eventTime: event?.time,
+        eventLocation: event?.location,
+        programName: program?.name,
+        programStartDate: program?.startDate,
+      }).catch(err => console.error("Email send failed:", err));
 
       res.status(201).json(registration);
     } catch (error) {
