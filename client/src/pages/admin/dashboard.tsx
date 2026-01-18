@@ -5,6 +5,15 @@ import type { Event, Program, Registration } from "@shared/schema";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+}
+
 export default function AdminDashboard() {
   const { data: events = [], isLoading: eventsLoading } = useQuery<Event[]>({
     queryKey: ["/api/events"],
@@ -205,7 +214,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{event.title}</p>
-                      <p className="text-sm text-muted-foreground">{event.date}</p>
+                      <p className="text-sm text-muted-foreground">{formatDate(event.date)}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-medium">{event.registeredCount}/{event.capacity}</p>
