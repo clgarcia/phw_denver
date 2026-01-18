@@ -11,6 +11,15 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+}
+
 export default function Programs() {
   const [searchTerm, setSearchTerm] = useState("");
   
@@ -18,7 +27,9 @@ export default function Programs() {
     queryKey: ["/api/programs"],
   });
 
-  const activePrograms = programs.filter(p => p.isActive);
+  const activePrograms = programs
+    .filter(p => p.isActive)
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
   const filteredPrograms = activePrograms.filter(program =>
     program.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     program.description.toLowerCase().includes(searchTerm.toLowerCase())
@@ -92,7 +103,7 @@ export default function Programs() {
                         <div className="space-y-2 flex-1">
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Calendar className="h-4 w-4" />
-                            <span>{program.startDate} - {program.endDate}</span>
+                            <span>{formatDate(program.startDate)}</span>
                           </div>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Clock className="h-4 w-4" />
