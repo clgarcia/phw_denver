@@ -10,6 +10,7 @@ import heroImage from "@assets/stock_images/fly_fishing_outdoor__e6919c4b.jpg";
 import activityImage1 from "@assets/stock_images/fly_fishing_outdoor__104c4098.jpg";
 import activityImage2 from "@assets/stock_images/fly_fishing_outdoor__02f9483b.jpg";
 import volunteerImage from "@assets/Volunteer_pic_1768761271488.png";
+import tripCoordinatorImage from "@assets/tripCoordinator_pic_1768761876957.png";
 
 export default function Home() {
   const { data: events = [], isLoading: eventsLoading } = useQuery<Event[]>({
@@ -198,7 +199,7 @@ export default function Home() {
               <Card className="overflow-hidden">
                 <div className="h-48 overflow-hidden">
                   <img 
-                    src={activityImage2} 
+                    src={tripCoordinatorImage} 
                     alt="Trip coordinator"
                     className="w-full h-full object-cover"
                   />
