@@ -366,7 +366,7 @@ export default function Register() {
                                         value={program.id}
                                         data-testid={`option-program-${program.id}`}
                                       >
-                                        {program.name} - {formatDate(program.startDate)} - {formatDate(program.endDate)}
+                                        {program.name} - {formatDate(program.startDate)}
                                       </SelectItem>
                                     ))
                                   )}
@@ -390,7 +390,7 @@ export default function Register() {
                                 <p className="text-sm text-muted-foreground">
                                   {selectedEvent 
                                     ? `${formatDate(selectedEvent.date)} at ${selectedEvent.time}`
-                                    : `${formatDate(selectedProgram?.startDate || "")} - ${formatDate(selectedProgram?.endDate || "")}`
+                                    : formatDate(selectedProgram?.startDate || "")
                                   }
                                 </p>
                               </div>
