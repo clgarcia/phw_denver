@@ -31,7 +31,10 @@ export default function Home() {
   });
 
   const upcomingEvents = events.filter((e: Event) => e.isActive).slice(0, 4);
-  const activePrograms = programs.filter((p: Program) => p.isActive).slice(0, 4);
+  const activePrograms = programs
+    .filter((p: Program) => p.isActive)
+    .sort((a: Program, b: Program) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+    .slice(0, 4);
 
   const eventImages = [activityImage1, activityImage2, heroImage, activityImage1];
 
