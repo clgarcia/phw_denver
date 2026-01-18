@@ -270,14 +270,13 @@ export default function Home() {
                     <CardContent className="space-y-3">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="h-4 w-4" />
-                        <span>{program.startDate} - {program.endDate}</span>
+                        <span>{program.startDate}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Clock className="h-4 w-4" />
                         <span>{program.schedule}</span>
                       </div>
-                      <div className="flex items-center justify-between pt-2">
-                        <span className="text-lg font-bold text-primary">${program.price}</span>
+                      <div className="flex items-center justify-end pt-2">
                         <Link href={`/register?program=${program.id}`}>
                           <Button size="sm" className="bg-[#c73e1d]/90 hover:bg-[#c73e1d] border-[#c73e1d]/90" data-testid={`button-register-program-${program.id}`}>
                             Register
