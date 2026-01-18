@@ -9,6 +9,15 @@ import { useQuery } from "@tanstack/react-query";
 import type { Event } from "@shared/schema";
 import { useState } from "react";
 
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+}
+
 export default function Events() {
   const [searchTerm, setSearchTerm] = useState("");
   
@@ -16,7 +25,9 @@ export default function Events() {
     queryKey: ["/api/events"],
   });
 
-  const activeEvents = events.filter(e => e.isActive);
+  const activeEvents = events
+    .filter(e => e.isActive)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   const filteredEvents = activeEvents.filter(event =>
     event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -87,7 +98,7 @@ export default function Events() {
                       <CardContent className="space-y-2">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Calendar className="h-4 w-4" />
-                          <span>{event.date}</span>
+                          <span>{formatDate(event.date)}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Clock className="h-4 w-4" />
