@@ -3,7 +3,6 @@ import { Footer } from "@/components/layout/footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -18,11 +17,24 @@ import { Calendar, CheckCircle, Loader2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState } from "react";
 
+function formatDate(dateString: string): string {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "";
+  return date.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+}
+
+const phoneRegex = /^\d{3}-\d{3}-\d{4}$/;
+
 const registrationSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Invalid email address"),
-  phone: z.string().min(10, "Valid phone number required"),
+  email: z.string().min(1, "Email is required").email("Invalid email address"),
+  phone: z.string().min(1, "Phone number is required").regex(phoneRegex, "Phone number must be in format: 555-555-5555"),
   participationType: z.enum(["participant", "volunteer"], { required_error: "Please select a participation type" }),
   eventId: z.string().optional(),
   programId: z.string().optional(),
@@ -43,6 +55,9 @@ export default function Register() {
   const searchParams = new URLSearchParams(searchString);
   const preselectedEventId = searchParams.get("event") || undefined;
   const preselectedProgramId = searchParams.get("program") || undefined;
+  
+  const isEventRegistration = !!preselectedEventId;
+  const isProgramRegistration = !!preselectedProgramId;
 
   const { data: events = [] } = useQuery<Event[]>({
     queryKey: ["/api/events"],
@@ -96,9 +111,20 @@ export default function Register() {
     registerMutation.mutate(data);
   };
 
-  const registrationType = form.watch("eventId") ? "event" : form.watch("programId") ? "program" : null;
   const selectedEvent = activeEvents.find(e => e.id === form.watch("eventId"));
   const selectedProgram = activePrograms.find(p => p.id === form.watch("programId"));
+
+  const pageTitle = isEventRegistration 
+    ? "Register for Event" 
+    : isProgramRegistration 
+    ? "Register for Program" 
+    : "Register for Events & Programs";
+
+  const pageDescription = isEventRegistration
+    ? "Fill out the form below to register for this event"
+    : isProgramRegistration
+    ? "Fill out the form below to register for this program"
+    : "Fill out the form below to register for an upcoming event or program";
 
   if (registrationSuccess) {
     return (
@@ -147,10 +173,10 @@ export default function Register() {
           <div className="container mx-auto px-4">
             <div className="max-w-2xl mx-auto text-center space-y-4">
               <h1 className="text-3xl md:text-4xl font-bold" data-testid="text-register-title">
-                Register for Events & Programs
+                {pageTitle}
               </h1>
               <p className="text-muted-foreground">
-                Fill out the form below to register for an upcoming event or program
+                {pageDescription}
               </p>
             </div>
           </div>
@@ -234,7 +260,7 @@ export default function Register() {
                             <FormControl>
                               <Input 
                                 type="tel" 
-                                placeholder="(555) 123-4567" 
+                                placeholder="555-555-5555" 
                                 {...field}
                                 data-testid="input-phone"
                               />
@@ -266,15 +292,13 @@ export default function Register() {
                         )}
                       />
 
-                      <div className="space-y-4">
-                        <Label>What would you like to register for?</Label>
-                        
+                      {!isProgramRegistration && (
                         <FormField
                           control={form.control}
                           name="eventId"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-sm text-muted-foreground">Select an Event</FormLabel>
+                              <FormLabel>Select an Event</FormLabel>
                               <Select 
                                 onValueChange={(value) => {
                                   field.onChange(value);
@@ -297,7 +321,7 @@ export default function Register() {
                                         value={event.id}
                                         data-testid={`option-event-${event.id}`}
                                       >
-                                        {event.title} - {event.date}
+                                        {event.title} - {formatDate(event.date)}
                                       </SelectItem>
                                     ))
                                   )}
@@ -307,15 +331,19 @@ export default function Register() {
                             </FormItem>
                           )}
                         />
+                      )}
 
+                      {!isEventRegistration && !isProgramRegistration && (
                         <div className="text-center text-sm text-muted-foreground">— or —</div>
+                      )}
 
+                      {!isEventRegistration && (
                         <FormField
                           control={form.control}
                           name="programId"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-sm text-muted-foreground">Select a Program</FormLabel>
+                              <FormLabel>Select a Program</FormLabel>
                               <Select 
                                 onValueChange={(value) => {
                                   field.onChange(value);
@@ -338,7 +366,7 @@ export default function Register() {
                                         value={program.id}
                                         data-testid={`option-program-${program.id}`}
                                       >
-                                        {program.name} - ${program.price}
+                                        {program.name} - {formatDate(program.startDate)}
                                       </SelectItem>
                                     ))
                                   )}
@@ -348,7 +376,7 @@ export default function Register() {
                             </FormItem>
                           )}
                         />
-                      </div>
+                      )}
 
                       {(selectedEvent || selectedProgram) && (
                         <Card className="bg-muted/50">
@@ -361,15 +389,10 @@ export default function Register() {
                                 </p>
                                 <p className="text-sm text-muted-foreground">
                                   {selectedEvent 
-                                    ? `${selectedEvent.date} at ${selectedEvent.time}`
-                                    : `${selectedProgram?.startDate} - ${selectedProgram?.endDate}`
+                                    ? `${formatDate(selectedEvent.date)} at ${selectedEvent.time}`
+                                    : `${formatDate(selectedProgram?.startDate || "")} - ${formatDate(selectedProgram?.endDate || "")}`
                                   }
                                 </p>
-                                {selectedProgram && (
-                                  <p className="text-sm font-medium text-primary mt-1">
-                                    ${selectedProgram.price}
-                                  </p>
-                                )}
                               </div>
                             </div>
                           </CardContent>
