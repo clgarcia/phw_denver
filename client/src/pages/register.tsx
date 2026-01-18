@@ -366,7 +366,7 @@ export default function Register() {
                                         value={program.id}
                                         data-testid={`option-program-${program.id}`}
                                       >
-                                        {program.name} - {formatDate(program.startDate)}
+                                        {program.name} - {formatDate(program.startDate)} - {formatDate(program.endDate)}
                                       </SelectItem>
                                     ))
                                   )}
