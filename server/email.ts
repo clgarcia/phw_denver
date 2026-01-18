@@ -1,54 +1,15 @@
-// Gmail integration for sending registration confirmation emails
-// Uses Replit's Gmail connector with googleapis
+import Mailgun from "mailgun.js";
+import formData from "form-data";
 
-import { google } from 'googleapis';
+const mailgun = new Mailgun(formData);
 
-let connectionSettings: any;
+const MAILGUN_API_KEY = process.env.MAILGUN_API_KEY;
+const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN;
 
-async function getAccessToken() {
-  if (connectionSettings && connectionSettings.settings.expires_at && new Date(connectionSettings.settings.expires_at).getTime() > Date.now()) {
-    return connectionSettings.settings.access_token;
-  }
-  
-  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
-  const xReplitToken = process.env.REPL_IDENTITY 
-    ? 'repl ' + process.env.REPL_IDENTITY 
-    : process.env.WEB_REPL_RENEWAL 
-    ? 'depl ' + process.env.WEB_REPL_RENEWAL 
-    : null;
-
-  if (!xReplitToken) {
-    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
-  }
-
-  connectionSettings = await fetch(
-    'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=google-mail',
-    {
-      headers: {
-        'Accept': 'application/json',
-        'X_REPLIT_TOKEN': xReplitToken
-      }
-    }
-  ).then(res => res.json()).then(data => data.items?.[0]);
-
-  const accessToken = connectionSettings?.settings?.access_token || connectionSettings.settings?.oauth?.credentials?.access_token;
-
-  if (!connectionSettings || !accessToken) {
-    throw new Error('Gmail not connected');
-  }
-  return accessToken;
-}
-
-async function getUncachableGmailClient() {
-  const accessToken = await getAccessToken();
-
-  const oauth2Client = new google.auth.OAuth2();
-  oauth2Client.setCredentials({
-    access_token: accessToken
-  });
-
-  return google.gmail({ version: 'v1', auth: oauth2Client });
-}
+const mg = MAILGUN_API_KEY ? mailgun.client({
+  username: "api",
+  key: MAILGUN_API_KEY,
+}) : null;
 
 interface RegistrationEmailData {
   recipientEmail: string;
@@ -73,33 +34,12 @@ function formatDate(dateString: string): string {
   });
 }
 
-function createEmailContent(to: string, subject: string, textBody: string, htmlBody: string): string {
-  const boundary = "boundary_" + Date.now();
-  
-  const messageParts = [
-    `To: ${to}`,
-    `Subject: ${subject}`,
-    'MIME-Version: 1.0',
-    `Content-Type: multipart/alternative; boundary="${boundary}"`,
-    '',
-    `--${boundary}`,
-    'Content-Type: text/plain; charset="UTF-8"',
-    '',
-    textBody,
-    '',
-    `--${boundary}`,
-    'Content-Type: text/html; charset="UTF-8"',
-    '',
-    htmlBody,
-    '',
-    `--${boundary}--`
-  ];
-  
-  const message = messageParts.join('\r\n');
-  return Buffer.from(message).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
 export async function sendRegistrationConfirmation(data: RegistrationEmailData): Promise<boolean> {
+  if (!mg || !MAILGUN_DOMAIN) {
+    console.log("Mailgun not configured - skipping email");
+    return false;
+  }
+
   const isEvent = !!data.eventTitle;
   const registrationType = isEvent ? "Event" : "Program";
   const itemName = isEvent ? data.eventTitle : data.programName;
@@ -182,16 +122,13 @@ Project Healing Waters - Denver Chapter
   `.trim();
 
   try {
-    const gmail = await getUncachableGmailClient();
-    const encodedMessage = createEmailContent(data.recipientEmail, subject, textBody, htmlBody);
-    
-    await gmail.users.messages.send({
-      userId: 'me',
-      requestBody: {
-        raw: encodedMessage
-      }
+    await mg.messages.create(MAILGUN_DOMAIN, {
+      from: `Project Healing Waters <postmaster@${MAILGUN_DOMAIN}>`,
+      to: [data.recipientEmail],
+      subject,
+      text: textBody,
+      html: htmlBody,
     });
-    
     console.log(`Registration confirmation email sent to ${data.recipientEmail}`);
     return true;
   } catch (error) {

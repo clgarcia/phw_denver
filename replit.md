@@ -72,7 +72,7 @@ Database tables:
 - **tsx**: TypeScript execution for Node.js
 
 ### Email Service
-- **Gmail**: Transactional email service for registration confirmations via Replit's Gmail connector
-- **Configuration**: Uses Replit's Gmail integration (googleapis package)
+- **Mailgun**: Transactional email service for registration confirmations
+- **Configuration**: Requires `MAILGUN_API_KEY` and `MAILGUN_DOMAIN` environment variables
 - **Email Module**: `server/email.ts` handles sending registration confirmation emails
-- **Note**: Uses Replit Gmail connector - emails sent from connected Gmail account
+- **Note**: For sandbox domains, recipient emails must be authorized in Mailgun dashboard
