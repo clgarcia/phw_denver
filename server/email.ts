@@ -123,7 +123,7 @@ Project Healing Waters - Denver Chapter
 
   try {
     await mg.messages.create(MAILGUN_DOMAIN, {
-      from: `Project Healing Waters <noreply@${MAILGUN_DOMAIN}>`,
+      from: `Project Healing Waters <postmaster@${MAILGUN_DOMAIN}>`,
       to: [data.recipientEmail],
       subject,
       text: textBody,
