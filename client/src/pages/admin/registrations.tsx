@@ -127,6 +127,7 @@ export default function AdminRegistrations() {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
+              <TableHead>Type</TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>Event/Program</TableHead>
               <TableHead>Date</TableHead>
@@ -145,6 +146,9 @@ export default function AdminRegistrations() {
                     </div>
                     <span className="font-medium">{reg.firstName} {reg.lastName}</span>
                   </div>
+                </TableCell>
+                <TableCell>
+                  <span className="text-sm capitalize">{reg.participationType || "participant"}</span>
                 </TableCell>
                 <TableCell>
                   <div className="space-y-1">

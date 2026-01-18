@@ -40,6 +40,7 @@ export const registrations = pgTable("registrations", {
   lastName: text("last_name").notNull(),
   email: text("email").notNull(),
   phone: text("phone").notNull(),
+  participationType: text("participation_type").notNull().default("participant"),
   eventId: varchar("event_id", { length: 36 }),
   programId: varchar("program_id", { length: 36 }),
   status: text("status").notNull().default("pending"),

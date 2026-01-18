@@ -23,6 +23,7 @@ const registrationSchema = z.object({
   lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email address"),
   phone: z.string().min(10, "Valid phone number required"),
+  participationType: z.enum(["participant", "volunteer"], { required_error: "Please select a participation type" }),
   eventId: z.string().optional(),
   programId: z.string().optional(),
   notes: z.string().optional(),
@@ -61,6 +62,7 @@ export default function Register() {
       lastName: "",
       email: "",
       phone: "",
+      participationType: undefined,
       eventId: preselectedEventId,
       programId: preselectedProgramId,
       notes: "",
@@ -237,6 +239,28 @@ export default function Register() {
                                 data-testid="input-phone"
                               />
                             </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="participationType"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Participation Type</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-participation-type">
+                                  <SelectValue placeholder="Select participation type..." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="participant" data-testid="option-participant">Participant</SelectItem>
+                                <SelectItem value="volunteer" data-testid="option-volunteer">Volunteer</SelectItem>
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
