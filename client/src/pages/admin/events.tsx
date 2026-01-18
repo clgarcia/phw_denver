@@ -30,6 +30,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+}
+
 export default function AdminEvents() {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -39,6 +48,8 @@ export default function AdminEvents() {
   const { data: events = [], isLoading } = useQuery<Event[]>({
     queryKey: ["/api/events"],
   });
+
+  const sortedEvents = [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertEvent) => {
@@ -250,9 +261,9 @@ export default function AdminEvents() {
             </Card>
           ))}
         </div>
-      ) : events.length > 0 ? (
+      ) : sortedEvents.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {events.map((event) => (
+          {sortedEvents.map((event) => (
             <Card key={event.id} data-testid={`card-event-${event.id}`}>
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
@@ -261,7 +272,7 @@ export default function AdminEvents() {
                     {event.isActive ? "Active" : "Inactive"}
                   </Badge>
                 </div>
-                <CardDescription>{event.date} at {event.time}</CardDescription>
+                <CardDescription>{formatDate(event.date)} at {event.time}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>

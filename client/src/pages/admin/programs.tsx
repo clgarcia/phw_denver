@@ -30,6 +30,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+}
+
 export default function AdminPrograms() {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -39,6 +48,8 @@ export default function AdminPrograms() {
   const { data: programs = [], isLoading } = useQuery<Program[]>({
     queryKey: ["/api/programs"],
   });
+
+  const sortedPrograms = [...programs].sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertProgram) => {
@@ -266,9 +277,9 @@ export default function AdminPrograms() {
             </Card>
           ))}
         </div>
-      ) : programs.length > 0 ? (
+      ) : sortedPrograms.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {programs.map((program) => (
+          {sortedPrograms.map((program) => (
             <Card key={program.id} data-testid={`card-program-${program.id}`}>
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
@@ -277,7 +288,7 @@ export default function AdminPrograms() {
                     {program.isActive ? "Active" : "Inactive"}
                   </Badge>
                 </div>
-                <CardDescription>{program.startDate} - {program.endDate}</CardDescription>
+                <CardDescription>{formatDate(program.startDate)}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground line-clamp-2">{program.description}</p>

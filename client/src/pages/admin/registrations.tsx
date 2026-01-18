@@ -24,6 +24,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+}
+
 export default function AdminRegistrations() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
@@ -55,7 +64,9 @@ export default function AdminRegistrations() {
     },
   });
 
-  const filteredRegistrations = registrations.filter(reg => {
+  const sortedRegistrations = [...registrations].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  const filteredRegistrations = sortedRegistrations.filter(reg => {
     const matchesSearch = 
       reg.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       reg.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -200,7 +211,7 @@ export default function AdminRegistrations() {
                         <span className="text-sm">{getEventOrProgramName(reg)}</span>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm text-muted-foreground">{reg.createdAt}</span>
+                        <span className="text-sm text-muted-foreground">{formatDate(reg.createdAt)}</span>
                       </TableCell>
                       <TableCell>{getStatusBadge(reg.status)}</TableCell>
                       <TableCell>
