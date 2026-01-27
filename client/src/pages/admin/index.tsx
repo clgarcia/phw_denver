@@ -1,20 +1,25 @@
-import { Link, useLocation, Switch, Route } from "wouter";
+import { Link, useLocation, Switch, Route, useNavigate } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, ClipboardList, LayoutDashboard, Menu, ArrowLeft } from "lucide-react";
+import { Calendar, Users, ClipboardList, LayoutDashboard, Menu, ArrowLeft, Navigation, LogOut } from "lucide-react";
+const flagFish = "/assets/flag-fish.png";
 import { useState } from "react";
+import { useAuth } from "@/lib/auth-context";
 import AdminDashboard from "./dashboard";
 import AdminEvents from "./events";
 import AdminPrograms from "./programs";
+import AdminTrips from "./trips";
 import AdminRegistrations from "./registrations";
 
 export default function AdminLayout() {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
+  const { logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navItems = [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
     { href: "/admin/events", label: "Events", icon: Calendar },
     { href: "/admin/programs", label: "Programs", icon: ClipboardList },
+    { href: "/admin/trips", label: "Trips", icon: Navigation },
     { href: "/admin/registrations", label: "Registrations", icon: Users },
   ];
 
@@ -37,18 +42,24 @@ export default function AdminLayout() {
             <Menu className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <Calendar className="h-4 w-4 text-primary-foreground" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary overflow-hidden">
+              <img src={flagFish} alt="Flag Fish" className="h-7 w-7 object-contain" />
             </div>
-            <span className="font-semibold">EventHub Admin</span>
+            <span className="font-semibold">Project Healing Waters - DENVER Admin page</span>
           </div>
           <div className="ml-auto">
-            <Link href="/">
-              <Button variant="ghost" size="sm" data-testid="link-back-to-site">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Site
-              </Button>
-            </Link>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => {
+                logout();
+                navigate("/");
+              }}
+              data-testid="button-admin-logout"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
           </div>
         </div>
       </header>
@@ -88,6 +99,7 @@ export default function AdminLayout() {
             <Route path="/admin" component={AdminDashboard} />
             <Route path="/admin/events" component={AdminEvents} />
             <Route path="/admin/programs" component={AdminPrograms} />
+            <Route path="/admin/trips" component={AdminTrips} />
             <Route path="/admin/registrations" component={AdminRegistrations} />
           </Switch>
         </main>

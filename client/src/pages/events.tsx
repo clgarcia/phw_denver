@@ -18,6 +18,18 @@ function formatDate(dateString: string): string {
   });
 }
 
+function formatTime(timeString: string): string {
+  if (!timeString) return '';
+  try {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+  } catch {
+    return timeString;
+  }
+}
+
 export default function Events() {
   const [searchTerm, setSearchTerm] = useState("");
   
@@ -86,9 +98,27 @@ export default function Events() {
                 {filteredEvents.map((event) => (
                   <Link key={event.id} href={`/events/${event.id}`}>
                     <Card className="group h-full hover-elevate cursor-pointer transition-all duration-200">
-                      <div className="h-48 bg-gradient-to-br from-primary/20 to-accent/20 rounded-t-lg flex items-center justify-center">
-                        <Calendar className="h-16 w-16 text-primary/40" />
-                      </div>
+                      {event.imageUrl ? (
+                        <div className="h-48 rounded-t-lg overflow-hidden flex items-center justify-center bg-black/5">
+                          <div className="flex items-center justify-center h-full w-full bg-white" style={{ minHeight: 192 }}>
+                            <img
+                              src={event.imageUrl}
+                              alt={event.title}
+                              style={{
+                                maxWidth: "100%",
+                                maxHeight: "100%",
+                                width: "auto",
+                                height: "auto",
+                                display: "block",
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="h-48 bg-gradient-to-br from-primary/20 to-accent/20 rounded-t-lg flex items-center justify-center">
+                          <Calendar className="h-16 w-16 text-primary/40" />
+                        </div>
+                      )}
                       <CardHeader>
                         <CardTitle className="group-hover:text-primary transition-colors" data-testid={`text-event-title-${event.id}`}>
                           {event.title}
@@ -102,7 +132,7 @@ export default function Events() {
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Clock className="h-4 w-4" />
-                          <span>{event.time}</span>
+                          <span>{formatTime(event.time)}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <MapPin className="h-4 w-4" />

@@ -30,13 +30,17 @@ export default function Home() {
     queryKey: ["/api/programs"],
   });
 
-  const upcomingEvents = events.filter((e: Event) => e.isActive).slice(0, 4);
+  const upcomingEvents = events
+    .filter((e: Event) => e.isActive)
+    .sort((a: Event, b: Event) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .slice(0, 4);
   const activePrograms = programs
     .filter((p: Program) => p.isActive)
     .sort((a: Program, b: Program) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
     .slice(0, 4);
 
-  const eventImages = [activityImage1, activityImage2, heroImage, activityImage1];
+  // Use the actual event imageUrl if available, fallback to a stock image
+  const getEventImage = (event: Event, index: number) => event.imageUrl || [activityImage1, activityImage2, heroImage, activityImage1][index % 4];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -52,21 +56,16 @@ export default function Home() {
           <div className="container mx-auto px-4 relative z-10">
             <div className="max-w-2xl space-y-6">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white" data-testid="text-hero-title">
-                Healing Through Nature, Camaraderie & Adventure
+                Healing America’s Veterans Through The Therapeutic Art of Fly Fishing
               </h1>
               <p className="text-lg md:text-xl text-white/90 max-w-xl">
-                Join our community programs designed to connect people through outdoor activities, 
-                fly fishing, and meaningful experiences in nature.
+                Project Healing Waters aims to foster restoration, resilience, community, and 
+                lasting connections in the journey towards healing.
               </p>
               <div className="flex flex-wrap gap-4 pt-4">
                 <Link href="/register">
                   <Button size="lg" className="bg-[#c73e1d]/90 hover:bg-[#c73e1d] border-[#c73e1d]/90" data-testid="button-join-program">
                     Join Our Program
-                  </Button>
-                </Link>
-                <Link href="/events">
-                  <Button size="lg" variant="outline" className="bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20" data-testid="button-volunteer">
-                    Volunteer
                   </Button>
                 </Link>
               </div>
@@ -126,9 +125,10 @@ export default function Home() {
                     <Card className="group h-full hover-elevate cursor-pointer transition-all duration-200 overflow-hidden">
                       <div className="h-48 bg-muted overflow-hidden">
                         <img 
-                          src={eventImages[index % eventImages.length]} 
+                          src={getEventImage(event, index)} 
                           alt={event.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-contain mx-auto group-hover:scale-105 transition-transform duration-300 bg-white"
+                          style={{ maxHeight: 192 }}
                         />
                       </div>
                       <CardHeader>
@@ -163,95 +163,13 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="py-16 lg:py-24 bg-muted/30">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-2xl md:text-3xl font-bold mb-4" data-testid="text-volunteer-section">Volunteer Opportunities</h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                Step into the arena and make a difference. Your involvement matters - be part of something greater.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <Card className="overflow-hidden">
-                <div className="h-48 overflow-hidden">
-                  <img 
-                    src={volunteerImage} 
-                    alt="Volunteer opportunity"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <CardHeader>
-                  <CardTitle>Event Volunteer</CardTitle>
-                  <CardDescription>
-                    Help us run our outdoor events and programs. Perfect for those who love nature and want to give back.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2 text-sm text-muted-foreground mb-4">
-                    <li className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                      Assist with event setup and logistics
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                      Guide participants during activities
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                      Help create a welcoming environment
-                    </li>
-                  </ul>
-                  <Link href="/register">
-                    <Button variant="outline" className="w-full" data-testid="button-apply-volunteer">Apply Now</Button>
-                  </Link>
-                </CardContent>
-              </Card>
-
-              <Card className="overflow-hidden">
-                <div className="h-48 overflow-hidden">
-                  <img 
-                    src={tripCoordinatorImage} 
-                    alt="Trip coordinator"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <CardHeader>
-                  <CardTitle>Trip Coordinator</CardTitle>
-                  <CardDescription>
-                    Help administer our outdoor trips and adventures. This role involves coordination and participant management.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2 text-sm text-muted-foreground mb-4">
-                    <li className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                      Coordinate trip logistics and schedules
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                      Manage participant registrations
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                      Communicate with team members
-                    </li>
-                  </ul>
-                  <Link href="/register">
-                    <Button variant="outline" className="w-full" data-testid="button-apply-coordinator">Apply Now</Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
 
         <section className="py-16 lg:py-24">
           <div className="container mx-auto px-4">
             <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
               <div>
-                <h2 className="text-2xl md:text-3xl font-bold" data-testid="text-programs-section">Our Programs</h2>
-                <p className="text-muted-foreground mt-1">Connect with our community through ongoing programs</p>
+                <h2 className="text-2xl md:text-3xl font-bold" data-testid="text-programs-section">Upcoming Programs</h2>
+                <p className="text-muted-foreground mt-1">Connect with our community through upcoming programs</p>
               </div>
               <Link href="/programs">
                 <Button variant="ghost" data-testid="link-see-all-programs">
@@ -273,8 +191,16 @@ export default function Home() {
               </div>
             ) : activePrograms.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {activePrograms.map((program) => (
-                  <Card key={program.id} className="h-full hover-elevate transition-all duration-200">
+                {activePrograms.map((program, index) => (
+                  <Card key={program.id} className="h-full hover-elevate transition-all duration-200 overflow-hidden">
+                    <div className="h-48 bg-muted overflow-hidden">
+                      <img
+                        src={program.imageUrl || [activityImage1, activityImage2, heroImage, activityImage1][index % 4]}
+                        alt={program.name}
+                        className="w-full h-full object-contain mx-auto"
+                        style={{ maxHeight: 192 }}
+                      />
+                    </div>
                     <CardHeader>
                       <CardTitle data-testid={`text-program-name-${program.id}`}>{program.name}</CardTitle>
                       <CardDescription className="line-clamp-2">{program.description}</CardDescription>
@@ -306,6 +232,87 @@ export default function Home() {
                 <p className="text-muted-foreground">New programs coming soon!</p>
               </Card>
             )}
+          </div>
+        </section>
+
+        <section className="py-16 lg:py-24 bg-muted/30">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+              <h2 className="text-2xl md:text-3xl font-bold mb-4" data-testid="text-volunteer-section">Volunteer Opportunities</h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Step into the arena and make a difference. Your involvement matters - be part of something greater.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+              <Link href="/register" className="group">
+                <Card className="overflow-hidden cursor-pointer group-hover:shadow-lg transition-shadow duration-200 min-h-[400px] flex flex-col h-full">
+                  <div className="h-48 overflow-hidden">
+                    <img 
+                      src={volunteerImage} 
+                      alt="Volunteer opportunity"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <CardHeader>
+                    <CardTitle>Event Volunteer</CardTitle>
+                    <CardDescription>
+                      Help us run our outdoor events and programs. Perfect for those who love nature and want to give back.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2 text-sm text-muted-foreground mb-4">
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                        Assist with event setup and logistics
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                        Guide participants during activities
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                        Help create a welcoming environment
+                      </li>
+                    </ul>
+                  </CardContent>
+                </Card>
+              </Link>
+
+              <Link href="/register" className="group">
+                <Card className="overflow-hidden cursor-pointer group-hover:shadow-lg transition-shadow duration-200 min-h-[400px] flex flex-col h-full">
+                  <div className="h-48 overflow-hidden">
+                    <img 
+                      src={tripCoordinatorImage} 
+                      alt="Trip coordinator"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <CardHeader>
+                    <CardTitle>Trip Coordinator</CardTitle>
+                    <CardDescription>
+                      Help administer our outdoor trips and adventures. This role involves coordination and participant management.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2 text-sm text-muted-foreground mb-4">
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                        Coordinate trip logistics and schedules
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                        Manage participant registrations
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                        Communicate with team members
+                      </li>
+                    </ul>
+                  </CardContent>
+                </Card>
+              </Link>
+            </div>
           </div>
         </section>
 

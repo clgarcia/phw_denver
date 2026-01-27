@@ -1,14 +1,17 @@
+// Storage layer for database operations and seeding
 import { 
   type User, type InsertUser,
   type Event, type InsertEvent,
   type Program, type InsertProgram,
+  type Trip, type InsertTrip,
   type Registration, type InsertRegistration,
-  users, events, programs, registrations
+  users, events, programs, trips, registrations
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
+// Interface for storage operations (CRUD for all entities)
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -28,6 +31,13 @@ export interface IStorage {
   deleteProgram(id: string): Promise<boolean>;
   incrementProgramRegistration(id: string): Promise<void>;
   
+  getTrips(): Promise<Trip[]>;
+  getTrip(id: string): Promise<Trip | undefined>;
+  createTrip(trip: InsertTrip): Promise<Trip>;
+  updateTrip(id: string, trip: Partial<InsertTrip>): Promise<Trip | undefined>;
+  deleteTrip(id: string): Promise<boolean>;
+  incrementTripRegistration(id: string): Promise<void>;
+  
   getRegistrations(): Promise<Registration[]>;
   getRegistration(id: string): Promise<Registration | undefined>;
   createRegistration(registration: InsertRegistration): Promise<Registration>;
@@ -37,7 +47,9 @@ export interface IStorage {
   initializeDatabase(): Promise<void>;
 }
 
+// Concrete implementation of IStorage using Drizzle ORM
 export class DatabaseStorage implements IStorage {
+  // Initialize database and seed if empty
   async initializeDatabase(): Promise<void> {
     const existingEvents = await db.select().from(events).limit(1);
     if (existingEvents.length === 0) {
@@ -45,6 +57,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Seed the database with initial data for events, programs, and registrations
   private async seedData() {
     const event1 = await this.createEvent({
       title: "Fly Fishing Show",
@@ -130,6 +143,7 @@ export class DatabaseStorage implements IStorage {
       isActive: true,
     });
 
+    // Seed some registrations
     await this.createRegistration({
       firstName: "Sarah",
       lastName: "Johnson",
@@ -161,6 +175,7 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
+  // User CRUD operations
   async getUser(id: string): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.id, id));
     return result[0];
@@ -171,12 +186,15 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+
+  // Create a new user
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
     const result = await db.insert(users).values({ ...insertUser, id }).returning();
     return result[0];
   }
 
+  // Event CRUD operations
   async getEvents(): Promise<Event[]> {
     return await db.select().from(events);
   }
@@ -186,6 +204,7 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  // Create a new event
   async createEvent(insertEvent: InsertEvent): Promise<Event> {
     const id = randomUUID();
     const result = await db.insert(events).values({
@@ -197,22 +216,26 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  // Update an event
   async updateEvent(id: string, data: Partial<InsertEvent>): Promise<Event | undefined> {
     const result = await db.update(events).set(data).where(eq(events.id, id)).returning();
     return result[0];
   }
 
+  // Delete an event
   async deleteEvent(id: string): Promise<boolean> {
     const result = await db.delete(events).where(eq(events.id, id)).returning();
     return result.length > 0;
   }
 
+  // Increment the registration count for an event
   async incrementEventRegistration(id: string): Promise<void> {
     await db.update(events)
       .set({ registeredCount: sql`${events.registeredCount} + 1` })
       .where(eq(events.id, id));
   }
 
+  // Program CRUD operations
   async getPrograms(): Promise<Program[]> {
     return await db.select().from(programs);
   }
@@ -222,6 +245,7 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  // Create a new program
   async createProgram(insertProgram: InsertProgram): Promise<Program> {
     const id = randomUUID();
     const result = await db.insert(programs).values({
@@ -232,22 +256,66 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  // Update a program
   async updateProgram(id: string, data: Partial<InsertProgram>): Promise<Program | undefined> {
     const result = await db.update(programs).set(data).where(eq(programs.id, id)).returning();
     return result[0];
   }
 
+  // Delete a program
   async deleteProgram(id: string): Promise<boolean> {
     const result = await db.delete(programs).where(eq(programs.id, id)).returning();
     return result.length > 0;
   }
 
+  // Increment the registration count for a program
   async incrementProgramRegistration(id: string): Promise<void> {
     await db.update(programs)
       .set({ registeredCount: sql`${programs.registeredCount} + 1` })
       .where(eq(programs.id, id));
   }
 
+  // Trip CRUD operations
+  async getTrips(): Promise<Trip[]> {
+    return await db.select().from(trips);
+  }
+
+  async getTrip(id: string): Promise<Trip | undefined> {
+    const result = await db.select().from(trips).where(eq(trips.id, id));
+    return result[0];
+  }
+
+  // Create a new trip
+  async createTrip(insertTrip: InsertTrip): Promise<Trip> {
+    const id = randomUUID();
+    const result = await db.insert(trips).values({
+      ...insertTrip,
+      id,
+      registeredCount: 0,
+    }).returning();
+    return result[0];
+  }
+
+  // Update a trip
+  async updateTrip(id: string, data: Partial<InsertTrip>): Promise<Trip | undefined> {
+    const result = await db.update(trips).set(data).where(eq(trips.id, id)).returning();
+    return result[0];
+  }
+
+  // Delete a trip
+  async deleteTrip(id: string): Promise<boolean> {
+    const result = await db.delete(trips).where(eq(trips.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Increment the registration count for a trip
+  async incrementTripRegistration(id: string): Promise<void> {
+    await db.update(trips)
+      .set({ registeredCount: sql`${trips.registeredCount} + 1` })
+      .where(eq(trips.id, id));
+  }
+
+  // Registration CRUD operations
   async getRegistrations(): Promise<Registration[]> {
     return await db.select().from(registrations);
   }
@@ -257,26 +325,30 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  // Create a new registration
   async createRegistration(insertRegistration: InsertRegistration): Promise<Registration> {
     const id = randomUUID();
     const result = await db.insert(registrations).values({
       ...insertRegistration,
       id,
       status: "pending",
-      createdAt: new Date().toISOString().split('T')[0],
+      createdAt: new Date().toISOString(),
     }).returning();
     return result[0];
   }
 
+  // Update a registration
   async updateRegistration(id: string, data: Partial<Registration>): Promise<Registration | undefined> {
     const result = await db.update(registrations).set(data).where(eq(registrations.id, id)).returning();
     return result[0];
   }
 
+  // Delete a registration
   async deleteRegistration(id: string): Promise<boolean> {
     const result = await db.delete(registrations).where(eq(registrations.id, id)).returning();
     return result.length > 0;
   }
 }
 
+// Export a singleton storage instance
 export const storage = new DatabaseStorage();

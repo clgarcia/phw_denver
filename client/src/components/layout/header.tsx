@@ -12,6 +12,7 @@ export function Header() {
     { href: "/", label: "Home" },
     { href: "/events", label: "Events" },
     { href: "/programs", label: "Programs" },
+    { href: "/trips", label: "Trips" },
     { href: "/register", label: "Join Us" },
   ];
 

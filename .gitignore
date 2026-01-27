@@ -1,6 +1,59 @@
-node_modules
-dist
+# -------------------------------------------------------
+# Node / Backend
+# -------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+.pnpm-store/
+
+# Environment variables (never commit secrets)
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Logs
+logs/
+*.log
+*.log.*
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Runtime data
+lib-cov/
+coverage/
+.nyc_output/
+
+# OS-specific files
 .DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
+Thumbs.db
+
+# Editor folders
+.vscode/
+.idea/
+
+# -------------------------------------------------------
+# Vite / React Frontend
+# -------------------------------------------------------
+dist/
+.cache/
+*.local
+
+# Vite environment files (frontend)
+# These are safe to commit ONLY if they contain no secrets
+# but we ignore them by default for safety
+.env.*.local
+
+# -------------------------------------------------------
+# Misc
+# -------------------------------------------------------
+*.swp
+*.swo
+*.bak
+*.tmp

@@ -16,6 +16,7 @@ import { useLocation, useSearch } from "wouter";
 import { Calendar, CheckCircle, Loader2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState } from "react";
+import { useEffect } from "react";
 
 function formatDate(dateString: string): string {
   if (!dateString) return "";
@@ -30,27 +31,46 @@ function formatDate(dateString: string): string {
 
 const phoneRegex = /^\d{3}-\d{3}-\d{4}$/;
 
+
 const registrationSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   email: z.string().min(1, "Email is required").email("Invalid email address"),
   phone: z.string().min(1, "Phone number is required").regex(phoneRegex, "Phone number must be in format: 555-555-5555"),
-  participationType: z.enum(["participant", "volunteer"], { required_error: "Please select a participation type" }),
-  eventId: z.string().optional(),
-  programId: z.string().optional(),
   notes: z.string().optional(),
-}).refine((data) => data.eventId || data.programId, {
-  message: "Please select an event or program",
-  path: ["eventId"],
 });
 
 type RegistrationFormData = z.infer<typeof registrationSchema>;
+
+const JOIN_OPTIONS = [
+  {
+    value: "participant",
+    label: "Register as a participant",
+    url: "https://www.tfaforms.com/4972194",
+  },
+  {
+    value: "volunteer",
+    label: "Register as a volunteer",
+    url: "https://www.tfaforms.com/4981203",
+  },
+  {
+    value: "donate-denver",
+    label: "Make a donation to the Denver Chapter",
+    url: "https://donate.projecthealingwaters.org/campaign/phw-denver/c552042",
+  },
+  {
+    value: "donate-veterans",
+    label: "Make a donation to help disabled veterans across the county",
+    url: "https://projecthealingwaters.org/ways-to-give/donate-now/",
+  },
+];
 
 export default function Register() {
   const { toast } = useToast();
   const searchString = useSearch();
   const [, navigate] = useLocation();
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [joinOption, setJoinOption] = useState<string>("");
   
   const searchParams = new URLSearchParams(searchString);
   const preselectedEventId = searchParams.get("event") || undefined;
@@ -77,12 +97,17 @@ export default function Register() {
       lastName: "",
       email: "",
       phone: "",
-      participationType: undefined,
-      eventId: preselectedEventId,
-      programId: preselectedProgramId,
       notes: "",
     },
   });
+
+  // Redirect to donation URLs if selected
+  useEffect(() => {
+    const selected = JOIN_OPTIONS.find(opt => opt.value === joinOption);
+    if (selected && selected.url) {
+      window.location.href = selected.url;
+    }
+  }, [joinOption]);
 
   const registerMutation = useMutation({
     mutationFn: async (data: RegistrationFormData) => {
@@ -167,282 +192,48 @@ export default function Register() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      
       <main className="flex-1">
         <section className="bg-gradient-to-br from-primary/10 via-background to-accent/20 py-16">
           <div className="container mx-auto px-4">
-            <div className="max-w-2xl mx-auto text-center space-y-4">
-              <h1 className="text-3xl md:text-4xl font-bold" data-testid="text-register-title">
-                {pageTitle}
-              </h1>
-              <p className="text-muted-foreground">
-                {pageDescription}
-              </p>
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-8">
+              {/* Left: Image and Join Our Program */}
+              <div className="flex flex-col items-center w-full md:w-1/2">
+                <img src="/assets/healing-those-who-serve.png" alt="Healing Those Who Serve" className="w-[24rem] h-[24rem] object-contain mb-12" />
+                <div className="flex flex-col items-center w-full pt-8">
+                  <h1 className="text-3xl md:text-4xl font-bold mb-4 text-center">Join Our Program</h1>
+                  <p className="text-muted-foreground mb-6 text-center">Select how you would like to get involved</p>
+                  <div className="w-full max-w-md">
+                    <Select value={joinOption} onValueChange={value => {
+                      const selected = JOIN_OPTIONS.find(opt => opt.value === value);
+                      if (selected && selected.url) {
+                        window.location.href = selected.url;
+                      }
+                      setJoinOption("");
+                    }}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Choose an option..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {JOIN_OPTIONS.map(opt => (
+                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+              {/* Right: Intro Text */}
+              <div className="w-full md:w-1/2 text-lg">
+                <p className="mb-6">Thank you for your interest in Project Healing Waters. What do we have to offer? A healing method for the injuries we took while we served our nation, be it physical or mental. We do this through fly fishing, be it a fly-tying class, building a fly rod, learning to cast, and going out on a trip with fellow veterans.</p>
+                <p className="mb-6">If you are a Veteran, and want to find the healing peace that fly fishing can bring, at no cost to you, please select the Register as a Participant option and populate the form. The Region will be Rocky mountain South, and our program is Denver.</p>
+                <p className="mb-6">If want to Volunteer with the program, and help us support our hero's, as a Mentor, Coach or any of a number of other great ways, ﻿please select Register as a Volunteer option and populate the form. The Region will be Rocky mountain South, and our program is Denver.</p>
+                <p className="mb-6">If you would like to donate there are two options. You can donate to the Denver Chapter or the National Project Healing Waters Organization using the dropdown options. Thank you!!</p>
+              </div>
             </div>
           </div>
         </section>
-
-        <section className="py-12">
-          <div className="container mx-auto px-4">
-            <div className="max-w-2xl mx-auto">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Registration Form</CardTitle>
-                  <CardDescription>
-                    Please provide your information to complete registration
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="firstName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>First Name</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  placeholder="John" 
-                                  {...field} 
-                                  data-testid="input-first-name"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="lastName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Last Name</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  placeholder="Doe" 
-                                  {...field}
-                                  data-testid="input-last-name"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="email" 
-                                placeholder="john@example.com" 
-                                {...field}
-                                data-testid="input-email"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone Number</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="tel" 
-                                placeholder="555-555-5555" 
-                                {...field}
-                                data-testid="input-phone"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="participationType"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Participation Type</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger data-testid="select-participation-type">
-                                  <SelectValue placeholder="Select participation type..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="participant" data-testid="option-participant">Participant</SelectItem>
-                                <SelectItem value="volunteer" data-testid="option-volunteer">Volunteer</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      {!isProgramRegistration && (
-                        <FormField
-                          control={form.control}
-                          name="eventId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Select an Event</FormLabel>
-                              <Select 
-                                onValueChange={(value) => {
-                                  field.onChange(value);
-                                  if (value) form.setValue("programId", undefined);
-                                }} 
-                                value={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger data-testid="select-event">
-                                    <SelectValue placeholder="Choose an event..." />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {activeEvents.length === 0 ? (
-                                    <SelectItem value="none" disabled>No events available</SelectItem>
-                                  ) : (
-                                    activeEvents.map((event) => (
-                                      <SelectItem 
-                                        key={event.id} 
-                                        value={event.id}
-                                        data-testid={`option-event-${event.id}`}
-                                      >
-                                        {event.title} - {formatDate(event.date)}
-                                      </SelectItem>
-                                    ))
-                                  )}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      )}
-
-                      {!isEventRegistration && !isProgramRegistration && (
-                        <div className="text-center text-sm text-muted-foreground">— or —</div>
-                      )}
-
-                      {!isEventRegistration && (
-                        <FormField
-                          control={form.control}
-                          name="programId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Select a Program</FormLabel>
-                              <Select 
-                                onValueChange={(value) => {
-                                  field.onChange(value);
-                                  if (value) form.setValue("eventId", undefined);
-                                }} 
-                                value={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger data-testid="select-program">
-                                    <SelectValue placeholder="Choose a program..." />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {activePrograms.length === 0 ? (
-                                    <SelectItem value="none" disabled>No programs available</SelectItem>
-                                  ) : (
-                                    activePrograms.map((program) => (
-                                      <SelectItem 
-                                        key={program.id} 
-                                        value={program.id}
-                                        data-testid={`option-program-${program.id}`}
-                                      >
-                                        {program.name} - {formatDate(program.startDate)}
-                                      </SelectItem>
-                                    ))
-                                  )}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      )}
-
-                      {(selectedEvent || selectedProgram) && (
-                        <Card className="bg-muted/50">
-                          <CardContent className="pt-4">
-                            <div className="flex items-start gap-3">
-                              <Calendar className="h-5 w-5 text-primary mt-0.5" />
-                              <div>
-                                <p className="font-medium">
-                                  {selectedEvent?.title || selectedProgram?.name}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  {selectedEvent 
-                                    ? `${formatDate(selectedEvent.date)} at ${selectedEvent.time}`
-                                    : formatDate(selectedProgram?.startDate || "")
-                                  }
-                                </p>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
-
-                      <FormField
-                        control={form.control}
-                        name="notes"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Additional Notes (Optional)</FormLabel>
-                            <FormControl>
-                              <Textarea 
-                                placeholder="Any special requirements or questions..."
-                                className="resize-none"
-                                {...field}
-                                data-testid="input-notes"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <Button 
-                        type="submit" 
-                        className="w-full" 
-                        size="lg"
-                        disabled={registerMutation.isPending}
-                        data-testid="button-submit-registration"
-                      >
-                        {registerMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Registering...
-                          </>
-                        ) : (
-                          "Complete Registration"
-                        )}
-                      </Button>
-                    </form>
-                  </Form>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
+        {/* No forms, just redirect on dropdown selection */}
       </main>
-
       <Footer />
     </div>
   );

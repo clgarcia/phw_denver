@@ -7,7 +7,8 @@ import { Switch } from "@/components/ui/switch";
 import { ClipboardList, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import type { Program, InsertProgram } from "@shared/schema";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import ImageUpload from "@/components/ui/image-upload";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
@@ -44,6 +45,16 @@ export default function AdminPrograms() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProgram, setEditingProgram] = useState<Program | null>(null);
   const [deleteProgram, setDeleteProgram] = useState<Program | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageUploading, setImageUploading] = useState(false);
+  // Pre-fill imageUrl when editing a program
+  useEffect(() => {
+    if (editingProgram && editingProgram.imageUrl) {
+      setImageUrl(editingProgram.imageUrl);
+    } else if (!editingProgram) {
+      setImageUrl("");
+    }
+  }, [editingProgram]);
 
   const { data: programs = [], isLoading } = useQuery<Program[]>({
     queryKey: ["/api/programs"],
@@ -99,17 +110,19 @@ export default function AdminPrograms() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    console.log("Submitting program with imageUrl:", imageUrl);
     const data: InsertProgram = {
       name: formData.get("name") as string,
       description: formData.get("description") as string,
       startDate: formData.get("startDate") as string,
       endDate: formData.get("endDate") as string,
       schedule: formData.get("schedule") as string,
-      price: parseInt(formData.get("price") as string) || 0,
+      // price removed
       capacity: parseInt(formData.get("capacity") as string) || 30,
       isActive: formData.get("isActive") === "on",
+      imageUrl,
     };
-
+    console.log("Program form data to submit:", data);
     if (editingProgram) {
       updateMutation.mutate({ id: editingProgram.id, data });
     } else {
@@ -172,6 +185,20 @@ export default function AdminPrograms() {
                   data-testid="input-program-description"
                 />
               </div>
+              <div className="space-y-2">
+                <Label>Program Image</Label>
+                {/* Debug: Rendering ImageUpload in programs form. imageUrl is available in state */}
+                <ImageUpload onUpload={(url: string) => {
+                  // console.log("ImageUpload: received uploaded image URL:", url);
+                  setImageUrl(url);
+                }} setUploading={setImageUploading} />
+                {imageUrl && (
+                  <div className="pt-2">
+                    <span className="text-xs text-muted-foreground">Current Image:</span>
+                    <img src={imageUrl} alt="Program" style={{ maxWidth: 200, marginTop: 4 }} />
+                  </div>
+                )}
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="startDate">Start Date</Label>
@@ -207,31 +234,17 @@ export default function AdminPrograms() {
                   data-testid="input-program-schedule"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="price">Price ($)</Label>
-                  <Input 
-                    id="price" 
-                    name="price" 
-                    type="number" 
-                    min="0" 
-                    required 
-                    defaultValue={editingProgram?.price || 0}
-                    data-testid="input-program-price"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="capacity">Capacity</Label>
-                  <Input 
-                    id="capacity" 
-                    name="capacity" 
-                    type="number" 
-                    min="1" 
-                    required 
-                    defaultValue={editingProgram?.capacity || 30}
-                    data-testid="input-program-capacity"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="capacity">Capacity</Label>
+                <Input 
+                  id="capacity" 
+                  name="capacity" 
+                  type="number" 
+                  min="1" 
+                  required 
+                  defaultValue={editingProgram?.capacity || 30}
+                  data-testid="input-program-capacity"
+                />
               </div>
               <div className="flex items-center gap-2">
                 <Switch 
@@ -248,10 +261,10 @@ export default function AdminPrograms() {
                 </Button>
                 <Button 
                   type="submit" 
-                  disabled={createMutation.isPending || updateMutation.isPending}
+                  disabled={imageUploading || createMutation.isPending || updateMutation.isPending}
                   data-testid="button-save-program"
                 >
-                  {(createMutation.isPending || updateMutation.isPending) && (
+                  {(imageUploading || createMutation.isPending || updateMutation.isPending) && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
                   {editingProgram ? "Update Program" : "Create Program"}
@@ -293,7 +306,6 @@ export default function AdminPrograms() {
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground line-clamp-2">{program.description}</p>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium text-primary">${program.price}</span>
                   <span className="text-muted-foreground">{program.registeredCount}/{program.capacity} enrolled</span>
                 </div>
                 <p className="text-sm text-muted-foreground">{program.schedule}</p>

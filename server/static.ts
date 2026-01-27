@@ -1,8 +1,11 @@
+// Static file serving for production builds
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
 
+// Serves static files and SPA fallback for unmatched routes
 export function serveStatic(app: Express) {
+  // Path to built client assets
   const distPath = path.resolve(__dirname, "public");
   if (!fs.existsSync(distPath)) {
     throw new Error(
@@ -10,9 +13,10 @@ export function serveStatic(app: Express) {
     );
   }
 
+  // Serve static files from the build directory
   app.use(express.static(distPath));
 
-  // fall through to index.html if the file doesn't exist
+  // Fallback to index.html for SPA routing
   app.use("/{*path}", (_req, res) => {
     res.sendFile(path.resolve(distPath, "index.html"));
   });

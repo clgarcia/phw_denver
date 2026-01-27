@@ -6,20 +6,20 @@ export function Footer() {
   return (
     <footer className="border-t bg-muted/30">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-items-center text-center">
+          <div className="space-y-4 flex flex-col items-center">
+            <div className="flex items-center gap-2 justify-center">
               <img src={logoImage} alt="Project Healing Waters" className="h-10 w-auto" />
               <span className="text-lg font-semibold">Project Healing Waters - DENVER</span>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Dedicated to the physical and emotional rehabilitation of disabled active military service personnel and veterans through fly fishing and outdoor activities.
+            <p className="text-sm text-muted-foreground max-w-xs">
+              Dedicated to the physical and emotional rehabilitation of veterans and active military service personnel through fly fishing and outdoor activities.
             </p>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 flex flex-col items-center">
             <h4 className="font-semibold">Quick Links</h4>
-            <nav className="flex flex-col gap-2">
+            <nav className="flex flex-col gap-2 items-center">
               <Link href="/events" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Upcoming Events
               </Link>
@@ -27,37 +27,29 @@ export function Footer() {
                 Programs
               </Link>
               <Link href="/register" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Register
+                Join Us
               </Link>
             </nav>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 flex flex-col items-center">
             <h4 className="font-semibold">Contact</h4>
-            <div className="space-y-2">
+            <div className="space-y-2 mx-auto text-left">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Mail className="h-4 w-4" />
-                <span>contact@eventhub.com</span>
+                <span>paul.moss@projecthealingwaters.org</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Phone className="h-4 w-4" />
-                <span>(555) 123-4567</span>
+                <span>(310) 480 - 7123</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4" />
-                <span>123 Event Street, City</span>
+                <span>6855 S. Havana St. Suite 270<br/>Centennial, CO 80112</span>
               </div>
             </div>
           </div>
 
-          <div className="space-y-4">
-            <h4 className="font-semibold">Hours</h4>
-            <div className="space-y-1 text-sm text-muted-foreground">
-              <p>Monday - Friday: 9am - 6pm</p>
-              <p>Saturday: 10am - 4pm</p>
-              <p>Sunday: Closed</p>
-            </div>
-          </div>
         </div>
 
         <div className="mt-12 pt-8 border-t text-center text-sm text-muted-foreground">

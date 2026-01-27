@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Calendar, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import type { Event, InsertEvent } from "@shared/schema";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
@@ -29,6 +29,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import ImageUpload from "@/components/ui/image-upload";
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -44,6 +45,16 @@ export default function AdminEvents() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deleteEvent, setDeleteEvent] = useState<Event | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
+    // Pre-fill imageUrl when editing an event
+    useEffect(() => {
+      if (editingEvent && editingEvent.imageUrl) {
+        setImageUrl(editingEvent.imageUrl);
+      } else if (!editingEvent) {
+        setImageUrl("");
+      }
+    }, [editingEvent]);
+  const [imageUploading, setImageUploading] = useState(false);
 
   const { data: events = [], isLoading } = useQuery<Event[]>({
     queryKey: ["/api/events"],
@@ -98,6 +109,7 @@ export default function AdminEvents() {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log("Submitting event with imageUrl:", imageUrl);
     const formData = new FormData(e.currentTarget);
     const data: InsertEvent = {
       title: formData.get("title") as string,
@@ -107,8 +119,10 @@ export default function AdminEvents() {
       location: formData.get("location") as string,
       capacity: parseInt(formData.get("capacity") as string) || 50,
       isActive: formData.get("isActive") === "on",
+      imageUrl,
     };
 
+    console.log("Event form data to submit:", data);
     if (editingEvent) {
       updateMutation.mutate({ id: editingEvent.id, data });
     } else {
@@ -226,16 +240,26 @@ export default function AdminEvents() {
                 />
                 <Label htmlFor="isActive">Active (visible to public)</Label>
               </div>
+              <div className="space-y-2">
+                <Label>Event Image</Label>
+                <ImageUpload onUpload={setImageUrl} setUploading={setImageUploading} />
+                {imageUrl && (
+                  <div className="pt-2">
+                    <span className="text-xs text-muted-foreground">Current Image:</span>
+                    <img src={imageUrl} alt="Event" style={{ maxWidth: 200, marginTop: 4 }} />
+                  </div>
+                )}
+              </div>
               <div className="flex gap-2 justify-end pt-4">
                 <Button type="button" variant="outline" onClick={closeDialog}>
                   Cancel
                 </Button>
                 <Button 
                   type="submit" 
-                  disabled={createMutation.isPending || updateMutation.isPending}
+                  disabled={imageUploading || createMutation.isPending || updateMutation.isPending}
                   data-testid="button-save-event"
                 >
-                  {(createMutation.isPending || updateMutation.isPending) && (
+                  {(imageUploading || createMutation.isPending || updateMutation.isPending) && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
                   {editingEvent ? "Update Event" : "Create Event"}

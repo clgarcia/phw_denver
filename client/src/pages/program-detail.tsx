@@ -3,54 +3,36 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { Calendar, Clock, MapPin, Users, ArrowLeft, CheckCircle } from "lucide-react";
+import { Calendar, Users, ArrowLeft, Navigation, CheckCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import type { Event } from "@shared/schema";
+import type { Program } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+    month: 'short',
+    day: 'numeric'
   });
 }
 
-function formatTime(timeString: string): string {
-  if (!timeString) return '';
-  try {
-    const [hours, minutes] = timeString.split(':').map(Number);
-    const period = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
-    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
-  } catch {
-    return timeString;
-  }
-}
-
-export default function EventDetail() {
+export default function ProgramDetail() {
   const { id } = useParams<{ id: string }>();
 
-  const { data: event, isLoading, error } = useQuery<Event>({
-    queryKey: ["/api/events", id],
+  const { data: program, isLoading, error } = useQuery<Program>({
+    queryKey: ["/api/programs", id],
   });
-
-  const spotsLeft = event ? event.capacity - event.registeredCount : 0;
-  const fillPercentage = event ? (event.registeredCount / event.capacity) * 100 : 0;
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      
       <main className="flex-1">
         <div className="container mx-auto px-4 py-8">
-          <Link href="/events">
-            <Button variant="ghost" className="mb-6" data-testid="button-back-events">
+          <Link href="/programs">
+            <Button variant="ghost" className="mb-6" data-testid="button-back-programs">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Events
+              Back to Programs
             </Button>
           </Link>
 
@@ -78,27 +60,27 @@ export default function EventDetail() {
                 </Card>
               </div>
             </div>
-          ) : error || !event ? (
+          ) : error || !program ? (
             <Card className="p-12 text-center max-w-md mx-auto">
-              <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Event not found</h3>
+              <Navigation className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Program not found</h3>
               <p className="text-muted-foreground mb-4">
-                The event you're looking for doesn't exist or has been removed.
+                The program you're looking for doesn't exist or has been removed.
               </p>
-              <Link href="/events">
-                <Button data-testid="button-browse-events">Browse Events</Button>
+              <Link href="/programs">
+                <Button data-testid="button-browse-programs">Browse Programs</Button>
               </Link>
             </Card>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-6">
                 <Card>
-                  {event.imageUrl ? (
+                  {program.imageUrl ? (
                     <div className="h-64 rounded-t-lg overflow-hidden flex items-center justify-center bg-black/5">
                       <div className="flex items-center justify-center h-full w-full bg-white" style={{ minHeight: 256 }}>
                         <img
-                          src={event.imageUrl}
-                          alt={event.title}
+                          src={program.imageUrl}
+                          alt={program.name}
                           style={{
                             maxWidth: "100%",
                             maxHeight: "100%",
@@ -110,58 +92,58 @@ export default function EventDetail() {
                       </div>
                     </div>
                   ) : (
-                    <div className="h-64 bg-gradient-to-br from-primary/20 to-accent/20 rounded-t-lg flex items-center justify-center">
-                      <Calendar className="h-24 w-24 text-primary/40" />
+                    <div className="h-64 bg-gradient-to-br from-blue-400/20 to-cyan-400/20 rounded-t-lg flex items-center justify-center">
+                      <Navigation className="h-24 w-24 text-blue-400/40" />
                     </div>
                   )}
                   <CardHeader>
                     <div className="flex items-start justify-between gap-4 flex-wrap">
                       <div>
-                        <CardTitle className="text-2xl md:text-3xl" data-testid="text-event-title">
-                          {event.title}
+                        <CardTitle className="text-2xl md:text-3xl" data-testid="text-program-title">
+                          {program.name}
                         </CardTitle>
-                        <CardDescription className="mt-2">{formatDate(event.date)} at {formatTime(event.time)}</CardDescription>
+                        <CardDescription className="mt-2">
+                          {formatDate(program.startDate)} - {formatDate(program.endDate)}
+                        </CardDescription>
                       </div>
-                      <Badge variant={event.isActive ? "default" : "secondary"}>
-                        {event.isActive ? "Active" : "Inactive"}
+                      <Badge variant={program.isActive ? "default" : "secondary"}>
+                        {program.isActive ? "Active" : "Inactive"}
                       </Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div>
-                      <h3 className="font-semibold mb-2">About This Event</h3>
-                      <p className="text-muted-foreground whitespace-pre-wrap" data-testid="text-event-description">
-                        {event.description}
+                      <h3 className="font-semibold mb-2">About This Program</h3>
+                      <p className="text-muted-foreground whitespace-pre-wrap" data-testid="text-program-description">
+                        {program.description}
                       </p>
                     </div>
-
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
                         <Calendar className="h-5 w-5 text-primary" />
                         <div>
-                          <p className="text-sm text-muted-foreground">Date</p>
-                          <p className="font-medium">{formatDate(event.date)}</p>
+                          <p className="text-sm text-muted-foreground">Start Date</p>
+                          <p className="font-medium">{formatDate(program.startDate)}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                        <Clock className="h-5 w-5 text-primary" />
+                        <Calendar className="h-5 w-5 text-primary" />
                         <div>
-                          <p className="text-sm text-muted-foreground">Time</p>
-                          <p className="font-medium">{formatTime(event.time)}</p>
+                          <p className="text-sm text-muted-foreground">End Date</p>
+                          <p className="font-medium">{formatDate(program.endDate)}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                        <MapPin className="h-5 w-5 text-primary" />
+                        <Users className="h-5 w-5 text-primary" />
                         <div>
-                          <p className="text-sm text-muted-foreground">Location</p>
-                          <p className="font-medium">{event.location}</p>
+                          <p className="text-sm text-muted-foreground">Capacity</p>
+                          <p className="font-medium">{program.registeredCount} / {program.capacity}</p>
                         </div>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </div>
-
               <div className="space-y-6">
                 <Card>
                   <CardHeader>
@@ -171,35 +153,34 @@ export default function EventDetail() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Capacity</span>
-                        <span className="font-medium">{event.registeredCount} / {event.capacity}</span>
+                        <span className="font-medium">{program.registeredCount} / {program.capacity}</span>
                       </div>
-                      <Progress value={fillPercentage} className="h-2" />
+                      <div className="h-2 rounded bg-muted overflow-hidden">
+                        <div className="h-2 rounded bg-primary" style={{ width: `${(program.registeredCount / program.capacity) * 100}%` }} />
+                      </div>
                     </div>
-
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
                       <Users className="h-5 w-5 text-primary" />
                       <div>
-                        <p className="font-medium text-primary">{spotsLeft} spots remaining</p>
+                        <p className="font-medium text-primary">{program.capacity - program.registeredCount} spots remaining</p>
                         <p className="text-sm text-muted-foreground">
-                          {fillPercentage > 80 ? "Filling up fast!" : "Spots available"}
+                          {(program.registeredCount / program.capacity) * 100 > 80 ? "Filling up fast!" : "Spots available"}
                         </p>
                       </div>
                     </div>
-
-                    {spotsLeft > 0 ? (
-                      <Link href={`/register?event=${event.id}`}>
-                        <Button className="w-full" size="lg" data-testid="button-register-event">
-                          Register for This Event
+                    {program.capacity - program.registeredCount > 0 ? (
+                      <Link href={`/register?program=${program.id}`}>
+                        <Button className="w-full" size="lg" data-testid="button-register-program">
+                          Register for This Program
                         </Button>
                       </Link>
                     ) : (
                       <Button className="w-full" size="lg" disabled>
-                        Event Full
+                        Program Full
                       </Button>
                     )}
                   </CardContent>
                 </Card>
-
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">What to Expect</CardTitle>
@@ -216,7 +197,7 @@ export default function EventDetail() {
                       </li>
                       <li className="flex items-start gap-3">
                         <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
-                        <span className="text-sm">Reminder before the event</span>
+                        <span className="text-sm">Reminder before the program</span>
                       </li>
                     </ul>
                   </CardContent>
@@ -226,7 +207,6 @@ export default function EventDetail() {
           )}
         </div>
       </main>
-
       <Footer />
     </div>
   );
