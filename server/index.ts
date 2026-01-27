@@ -9,8 +9,8 @@ import { fileURLToPath } from "url";
 // Get __dirname in ES module context
 const __dirname = dirname(fileURLToPath(import.meta.url));
 import path from "path";
-import { registerRoutes } from "./routes";
-import { serveStatic } from "./static";
+import { registerRoutes } from "./routes.js";
+import { serveStatic } from "./static.js";
 import { createServer } from "http";
 import fileUpload from "express-fileupload";
 
@@ -78,7 +78,7 @@ app.use((req, res, next) => {
   next();
 });
 
-import { storage } from "./storage";
+import { storage } from "./storage.js";
 
 // Main async startup routine
 (async () => {
@@ -101,7 +101,7 @@ import { storage } from "./storage";
   if (process.env.NODE_ENV === "production") {
     serveStatic(app);
   } else {
-    const { setupVite } = await import("./vite");
+    const { setupVite } = await import("./vite.js");
     await setupVite(httpServer, app);
   }
 

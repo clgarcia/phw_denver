@@ -7,7 +7,7 @@ import {
   type Registration, type InsertRegistration,
   users, events, programs, trips, registrations
 } from "@shared/schema";
-import { db } from "./db";
+import { db } from "./db.js";
 import { eq, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
