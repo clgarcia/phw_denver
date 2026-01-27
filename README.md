@@ -215,7 +215,7 @@ Please ensure your code follows the project's coding standards and includes appr
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project's license will be determined by the project maintainers. Please contact the repository owner for licensing information.
 
 ## 👥 Authors
 
