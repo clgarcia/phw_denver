@@ -1,11 +1,16 @@
 import { useState } from "react";
 
-export default function ImageUpload({ onUpload, setUploading: setParentUploading }) {
-  const [preview, setPreview] = useState(null);
+interface ImageUploadProps {
+  onUpload: (url: string) => void;
+  setUploading?: (uploading: boolean) => void;
+}
+
+export default function ImageUpload({ onUpload, setUploading: setParentUploading }: ImageUploadProps) {
+  const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const handleChange = async (e) => {
-    const file = e.target.files[0];
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (!file) return;
     setPreview(URL.createObjectURL(file));
     setUploading(true);

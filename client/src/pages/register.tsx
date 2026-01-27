@@ -136,8 +136,12 @@ export default function Register() {
     registerMutation.mutate(data);
   };
 
-  const selectedEvent = activeEvents.find(e => e.id === form.watch("eventId"));
-  const selectedProgram = activePrograms.find(p => p.id === form.watch("programId"));
+  // Safely get eventId and programId from form values if present
+  const formValues = form.getValues() as Record<string, unknown>;
+  const selectedEventId = typeof formValues.eventId === "string" ? formValues.eventId : undefined;
+  const selectedProgramId = typeof formValues.programId === "string" ? formValues.programId : undefined;
+  const selectedEvent = activeEvents.find(e => e.id === selectedEventId);
+  const selectedProgram = activePrograms.find(p => p.id === selectedProgramId);
 
   const pageTitle = isEventRegistration 
     ? "Register for Event" 
@@ -206,7 +210,7 @@ export default function Register() {
                     <Select value={joinOption} onValueChange={value => {
                       const selected = JOIN_OPTIONS.find(opt => opt.value === value);
                       if (selected && selected.url) {
-                        window.location.href = selected.url;
+                        window.location.replace(selected.url);
                       }
                       setJoinOption("");
                     }}>

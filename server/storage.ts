@@ -105,7 +105,6 @@ export class DatabaseStorage implements IStorage {
       startDate: "2026-03-01",
       endDate: "2026-04-26",
       schedule: "Saturdays 8:00 AM - 11:00 AM",
-      price: 150,
       capacity: 15,
       isActive: true,
     });
@@ -116,7 +115,6 @@ export class DatabaseStorage implements IStorage {
       startDate: "2026-02-15",
       endDate: "2026-05-15",
       schedule: "Wednesdays 6:00 PM - 8:00 PM",
-      price: 100,
       capacity: 12,
       isActive: true,
     });
@@ -127,7 +125,6 @@ export class DatabaseStorage implements IStorage {
       startDate: "2026-02-01",
       endDate: "2026-04-30",
       schedule: "Mon/Wed 7:00 AM - 8:30 AM",
-      price: 75,
       capacity: 20,
       isActive: true,
     });
@@ -138,7 +135,6 @@ export class DatabaseStorage implements IStorage {
       startDate: "2026-03-15",
       endDate: "2026-06-15",
       schedule: "First Saturday of each month 9:00 AM - 12:00 PM",
-      price: 50,
       capacity: 30,
       isActive: true,
     });

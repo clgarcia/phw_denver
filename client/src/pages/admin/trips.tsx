@@ -369,7 +369,7 @@ export default function AdminTrips() {
 
               <div className="space-y-2">
                 <Label>Trip Image</Label>
-                <ImageUpload onUpload={(url: string) => setImageUrl(url)} setUploading={setImageUploading} imageUrl={imageUrl} />
+                <ImageUpload onUpload={(url: string) => setImageUrl(url)} setUploading={setImageUploading} />
                 {imageUrl && (
                   <div className="pt-2">
                     <span className="text-xs text-muted-foreground">Current Image:</span>

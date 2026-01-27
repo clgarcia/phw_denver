@@ -324,7 +324,7 @@ export function ParticipantRegistrationForm({ onSuccess }: { onSuccess?: () => v
                             <label key={branch} className="flex items-center gap-2">
                               <input
                                 type="checkbox"
-                                checked={field.value?.includes(branch) || false}
+                                checked={field.value?.includes(branch as typeof field.value[number]) || false}
                                 onChange={e => {
                                   const checked = e.target.checked;
                                   if (checked) {
@@ -351,7 +351,7 @@ export function ParticipantRegistrationForm({ onSuccess }: { onSuccess?: () => v
                             <label key={dep} className="flex items-center gap-2">
                               <input
                                 type="checkbox"
-                                checked={field.value?.includes(dep) || false}
+                                checked={field.value?.includes(dep as typeof field.value[number]) || false}
                                 onChange={e => {
                                   const checked = e.target.checked;
                                   if (checked) {

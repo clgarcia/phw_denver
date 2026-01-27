@@ -337,9 +337,11 @@ export async function registerRoutes(
     const image = req.files.image;
     const uploadDir = __dirname + "/../public/uploads/";
     if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-    const filename = Date.now() + "-" + image.name.replace(/[^a-zA-Z0-9.]/g, "_");
+    // Handle both single and multiple file uploads
+    const singleImage = Array.isArray(image) ? image[0] : image;
+    const filename = Date.now() + "-" + singleImage.name.replace(/[^a-zA-Z0-9.]/g, "_");
     const filepath = path.join(uploadDir, filename);
-    image.mv(filepath, (err) => {
+    singleImage.mv(filepath, (err: any) => {
       if (err) return res.status(500).json({ message: "Failed to save image" });
       res.json({ url: "/uploads/" + filename });
     });

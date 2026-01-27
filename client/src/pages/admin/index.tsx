@@ -1,4 +1,4 @@
-import { Link, useLocation, Switch, Route, useNavigate } from "wouter";
+import { Link, useLocation, Switch, Route } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Calendar, Users, ClipboardList, LayoutDashboard, Menu, ArrowLeft, Navigation, LogOut } from "lucide-react";
 const flagFish = "/assets/flag-fish.png";

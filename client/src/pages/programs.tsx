@@ -134,12 +134,7 @@ export default function Programs() {
                           <Clock className="h-4 w-4" />
                           <span>{program.schedule}</span>
                         </div>
-                        {program.location && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <MapPin className="h-4 w-4" />
-                            <span>{program.location}</span>
-                          </div>
-                        )}
+                        {/* Location field removed from Program type. If needed, add to schema and backend. */}
                         <div className="flex items-center justify-between pt-2">
                           <div className="flex items-center gap-2 text-sm">
                             <Users className="h-4 w-4 text-primary" />
