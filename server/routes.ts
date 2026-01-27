@@ -8,7 +8,7 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 import { createServer, type Server } from "http";
 import { storage } from "./storage.js";
-import { insertEventSchema, insertProgramSchema, insertTripSchema, insertRegistrationSchema } from "@shared/schema";
+import { insertEventSchema, insertProgramSchema, insertTripSchema, insertRegistrationSchema } from "../shared/schema.js";
 import { sendRegistrationConfirmation } from "./email.js";
 
 // Registers all API endpoints for the application
