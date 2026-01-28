@@ -1,5 +1,6 @@
 {
   "include": ["server/**/*", "shared/**/*"],
+  "exclude": ["node_modules", "build", "**/*.test.ts", "vite.config.ts", "server/vite.ts"],
   "compilerOptions": {
     "incremental": true,
     "tsBuildInfoFile": "./node_modules/typescript/tsbuildinfo",
