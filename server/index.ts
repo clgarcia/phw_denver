@@ -136,6 +136,7 @@ let storage: any;
     });
 
     // Serve static files in production, Vite dev server in development
+    log(`NODE_ENV is: ${process.env.NODE_ENV}`);
     if (process.env.NODE_ENV === "production") {
       try {
         const mod = await import("./static.js");
@@ -149,6 +150,7 @@ let storage: any;
         log(`Failed to load static module: ${err}`, "error");
       }
     } else {
+      log("NODE_ENV is not production, using Vite dev server");
       const { setupVite } = await import("./vite.js");
       await setupVite(httpServer, app);
       log("Vite dev server configured");
