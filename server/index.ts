@@ -10,7 +10,6 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 import path from "path";
 import { registerRoutes } from "./routes.js";
-import { serveStatic } from "./static.js";
 import { createServer } from "http";
 import fileUpload from "express-fileupload";
 
@@ -99,7 +98,16 @@ import { storage } from "./storage.js";
 
   // Serve static files in production, Vite dev server in development
   if (process.env.NODE_ENV === "production") {
-    serveStatic(app);
+    try {
+      const mod = await import("./static.js");
+      if (mod && typeof mod.serveStatic === "function") {
+        mod.serveStatic(app);
+      } else {
+        console.error("serveStatic not found in ./static.js");
+      }
+    } catch (err) {
+      console.error("Failed to load static module:", err);
+    }
   } else {
     const { setupVite } = await import("./vite.js");
     await setupVite(httpServer, app);
