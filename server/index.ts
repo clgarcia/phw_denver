@@ -87,6 +87,7 @@ let storage: any;
 
 // Main async startup routine
 (async () => {
+  // Initialize database and routes (errors don't prevent static serving)
   try {
     // Initialize database (dynamically import storage to avoid top-level ESM failures)
     try {
@@ -123,31 +124,31 @@ let storage: any;
       }
       throw err;
     }
+  } catch (dbErr) {
+    log(`Startup error: ${dbErr}. Server will still bind to port and serve static files.`, "error");
+  }
 
-    // Global error handler for API
-    app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
-      const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
-      console.error("Internal Server Error:", err);
-      if (res.headersSent) {
-        return next(err);
-      }
-      return res.status(status).json({ message });
-    });
+  // Global error handler for API
+  app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+    console.error("Internal Server Error:", err);
+    if (res.headersSent) {
+      return next(err);
+    }
+    return res.status(status).json({ message });
+  });
 
-    // Serve static files in production, Vite dev server in development
+  // Always serve static files or Vite, regardless of DB status
+  try {
     log(`NODE_ENV is: ${process.env.NODE_ENV}`);
     if (process.env.NODE_ENV === "production") {
-      try {
-        const mod = await import("./static.js");
-        if (mod && typeof mod.serveStatic === "function") {
-          mod.serveStatic(app);
-          log("Static file serving configured");
-        } else {
-          log("serveStatic not found in ./static.js", "error");
-        }
-      } catch (err) {
-        log(`Failed to load static module: ${err}`, "error");
+      const mod = await import("./static.js");
+      if (mod && typeof mod.serveStatic === "function") {
+        mod.serveStatic(app);
+        log("Static file serving configured");
+      } else {
+        log("serveStatic not found in ./static.js", "error");
       }
     } else {
       log("NODE_ENV is not production, using Vite dev server");
@@ -155,8 +156,8 @@ let storage: any;
       await setupVite(httpServer, app);
       log("Vite dev server configured");
     }
-  } catch (startupErr) {
-    log(`Startup error: ${startupErr}. Server will still bind to port.`, "error");
+  } catch (staticErr) {
+    log(`Failed to set up static/vite: ${staticErr}`, "error");
   }
 
   // Start HTTP server on specified port and host
