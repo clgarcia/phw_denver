@@ -9,7 +9,9 @@ import { fileURLToPath } from "url";
 // Get __dirname in ES module context
 const __dirname = dirname(fileURLToPath(import.meta.url));
 import path from "path";
-import { registerRoutes } from "./routes.js";
+// `registerRoutes` is imported dynamically at runtime so we can surface helpful
+// diagnostics when the compiled file is missing on the host (Render/Linux).
+let registerRoutes: (server: any, app: any) => Promise<void> | void;
 import { createServer } from "http";
 import fileUpload from "express-fileupload";
 
@@ -83,7 +85,21 @@ import { storage } from "./storage.js";
 (async () => {
   // Initialize database and register API routes
   await storage.initializeDatabase();
-  await registerRoutes(httpServer, app);
+  try {
+    const mod = await import("./routes.js");
+    registerRoutes = mod.registerRoutes;
+    if (!registerRoutes) throw new Error("registerRoutes not exported from ./routes.js");
+    await registerRoutes(httpServer, app);
+  } catch (err) {
+    console.error("Failed to load ./routes.js:", err);
+    try {
+      const files = fs.readdirSync(path.resolve(__dirname));
+      console.error("Files in dist/server:", files);
+    } catch (e) {
+      console.error("Could not list dist/server contents:", e);
+    }
+    throw err;
+  }
 
   // Global error handler for API
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
