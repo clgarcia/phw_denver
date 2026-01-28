@@ -2,7 +2,6 @@
 import { type Express } from "express";
 import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
-import viteConfig from "../vite.config";
 import fs from "fs";
 import path from "path";
 import { nanoid } from "nanoid";
@@ -12,6 +11,10 @@ const viteLogger = createLogger();
 
 // Sets up Vite middleware and HTML serving for development
 export async function setupVite(server: Server, app: Express) {
+  // Load vite config dynamically at runtime
+  const viteConfigModule = await import("../vite.config");
+  const viteConfig = viteConfigModule.default;
+
   // Vite server options for middleware mode and HMR
   const serverOptions = {
     middlewareMode: true,
