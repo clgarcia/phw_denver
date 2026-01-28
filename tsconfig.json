@@ -1,6 +1,5 @@
 {
   "include": ["server/index.ts", "server/routes.ts", "server/static.ts", "server/db.ts", "server/storage.ts", "server/email.ts", "shared/**/*"],
-  "exclude": ["**/*", "!server/index.ts", "!server/routes.ts", "!server/static.ts", "!server/db.ts", "!server/storage.ts", "!server/email.ts", "!shared/**/*"],
   "compilerOptions": {
     "incremental": true,
     "tsBuildInfoFile": "./node_modules/typescript/tsbuildinfo",
