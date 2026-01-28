@@ -151,12 +151,15 @@ let storage: any;
 
   // Start HTTP server on specified port and host
   const port = parseInt(process.env.PORT || "5000", 10);
-  // Always use 0.0.0.0 in production so Render can detect the open port
-  const host = process.env.NODE_ENV === "production" ? "0.0.0.0" : "127.0.0.1";
+  const host = process.platform === "win32" ? "127.0.0.1" : "0.0.0.0";
   httpServer.listen(
-    { port, host },
+    {
+      port,
+      host,
+      reusePort: !process.platform.includes("win32"),
+    },
     () => {
-      log(`serving on port ${port} (host: ${host})`);
+      log(`serving on port ${port}`);
     },
   );
 })();
