@@ -4,6 +4,7 @@
   "exclude": ["node_modules", "dist", "client", "vite.config.ts", "server/vite.ts", "**/*.test.ts"],
   "compilerOptions": {
     "module": "Node16",
+    "moduleResolution": "Node16",
     "noEmitOnError": false,
     "skipLibCheck": true
   }
