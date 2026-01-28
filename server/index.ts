@@ -81,12 +81,30 @@ app.use((req, res, next) => {
   next();
 });
 
-import { storage } from "./storage.js";
+// `storage` is imported dynamically so we can surface diagnostics when the
+// compiled file is missing on the host environment.
+let storage: any;
 
 // Main async startup routine
 (async () => {
-  // Initialize database and register API routes
+  // Initialize database (dynamically import storage to avoid top-level ESM failures)
+  try {
+    const mod = await import("./storage.js");
+    storage = mod.storage;
+    if (!storage) throw new Error("storage not exported from ./storage.js");
+  } catch (err) {
+    console.error("Failed to load ./storage.js:", err);
+    try {
+      const files = fs.readdirSync(path.resolve(__dirname));
+      console.error("Files in dist/server:", files);
+    } catch (e) {
+      console.error("Could not list dist/server contents:", e);
+    }
+    throw err;
+  }
+
   await storage.initializeDatabase();
+
   try {
     const mod = await import("./routes.js");
     registerRoutes = mod.registerRoutes;
