@@ -1,16 +1,23 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+
+let replayerPlugin: any[] = [];
+
+// Only load Replit plugins in development with REPL_ID set
+if (process.env.NODE_ENV !== "production" && process.env.REPL_ID) {
+  try {
+    const runtimeErrorOverlay = require("@replit/vite-plugin-runtime-error-modal");
+    replayerPlugin = [runtimeErrorOverlay()];
+  } catch {
+    // Plugin not available, skip it
+  }
+}
 
 export default defineConfig({
   plugins: [
     react(),
-    runtimeErrorOverlay(),
-    // Only include Replit plugins in development with REPL_ID set
-    ...(process.env.NODE_ENV !== "production" && process.env.REPL_ID
-      ? []
-      : []),
+    ...replayerPlugin,
   ],
   resolve: {
     alias: {
