@@ -9,9 +9,11 @@ import { fileURLToPath } from "url";
 // Get __dirname in ES module context
 const __dirname = dirname(fileURLToPath(import.meta.url));
 import path from "path";
+import fs from "fs";
 // `registerRoutes` is imported dynamically at runtime so we can surface helpful
 // diagnostics when the compiled file is missing on the host (Render/Linux).
-let registerRoutes: (server: any, app: any) => Promise<void> | void;
+// `registerRoutes` returns a Promise<Server> in the source; allow any return to match that.
+let registerRoutes: (server: any, app: any) => Promise<any> | any;
 import { createServer } from "http";
 import fileUpload from "express-fileupload";
 
