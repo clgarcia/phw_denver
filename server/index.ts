@@ -87,79 +87,86 @@ let storage: any;
 
 // Main async startup routine
 (async () => {
-  // Initialize database (dynamically import storage to avoid top-level ESM failures)
   try {
-    const mod = await import("./storage.js");
-    storage = mod.storage;
-    if (!storage) throw new Error("storage not exported from ./storage.js");
-  } catch (err) {
-    console.error("Failed to load ./storage.js:", err);
+    // Initialize database (dynamically import storage to avoid top-level ESM failures)
     try {
-      const files = fs.readdirSync(path.resolve(__dirname));
-      console.error("Files in dist/server:", files);
-    } catch (e) {
-      console.error("Could not list dist/server contents:", e);
-    }
-    throw err;
-  }
-
-  await storage.initializeDatabase();
-
-  try {
-    const mod = await import("./routes.js");
-    registerRoutes = mod.registerRoutes;
-    if (!registerRoutes) throw new Error("registerRoutes not exported from ./routes.js");
-    await registerRoutes(httpServer, app);
-  } catch (err) {
-    console.error("Failed to load ./routes.js:", err);
-    try {
-      const files = fs.readdirSync(path.resolve(__dirname));
-      console.error("Files in dist/server:", files);
-    } catch (e) {
-      console.error("Could not list dist/server contents:", e);
-    }
-    throw err;
-  }
-
-  // Global error handler for API
-  app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    console.error("Internal Server Error:", err);
-    if (res.headersSent) {
-      return next(err);
-    }
-    return res.status(status).json({ message });
-  });
-
-  // Serve static files in production, Vite dev server in development
-  if (process.env.NODE_ENV === "production") {
-    try {
-      const mod = await import("./static.js");
-      if (mod && typeof mod.serveStatic === "function") {
-        mod.serveStatic(app);
-      } else {
-        console.error("serveStatic not found in ./static.js");
-      }
+      const mod = await import("./storage.js");
+      storage = mod.storage;
+      if (!storage) throw new Error("storage not exported from ./storage.js");
     } catch (err) {
-      console.error("Failed to load static module:", err);
+      log(`Failed to load ./storage.js: ${err}`, "error");
+      try {
+        const files = fs.readdirSync(path.resolve(__dirname));
+        log(`Files in dist/server: ${files.join(", ")}`, "error");
+      } catch (e) {
+        log(`Could not list dist/server contents: ${e}`, "error");
+      }
+      throw err;
     }
-  } else {
-    const { setupVite } = await import("./vite.js");
-    await setupVite(httpServer, app);
+
+    await storage.initializeDatabase();
+    log("Database initialized successfully");
+
+    try {
+      const mod = await import("./routes.js");
+      registerRoutes = mod.registerRoutes;
+      if (!registerRoutes) throw new Error("registerRoutes not exported from ./routes.js");
+      await registerRoutes(httpServer, app);
+      log("Routes registered successfully");
+    } catch (err) {
+      log(`Failed to load ./routes.js: ${err}`, "error");
+      try {
+        const files = fs.readdirSync(path.resolve(__dirname));
+        log(`Files in dist/server: ${files.join(", ")}`, "error");
+      } catch (e) {
+        log(`Could not list dist/server contents: ${e}`, "error");
+      }
+      throw err;
+    }
+
+    // Global error handler for API
+    app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
+      console.error("Internal Server Error:", err);
+      if (res.headersSent) {
+        return next(err);
+      }
+      return res.status(status).json({ message });
+    });
+
+    // Serve static files in production, Vite dev server in development
+    if (process.env.NODE_ENV === "production") {
+      try {
+        const mod = await import("./static.js");
+        if (mod && typeof mod.serveStatic === "function") {
+          mod.serveStatic(app);
+          log("Static file serving configured");
+        } else {
+          log("serveStatic not found in ./static.js", "error");
+        }
+      } catch (err) {
+        log(`Failed to load static module: ${err}`, "error");
+      }
+    } else {
+      const { setupVite } = await import("./vite.js");
+      await setupVite(httpServer, app);
+      log("Vite dev server configured");
+    }
+  } catch (startupErr) {
+    log(`Startup error: ${startupErr}. Server will still bind to port.`, "error");
   }
 
   // Start HTTP server on specified port and host
+  // Always bind to port, even if startup failed (so Render can detect the service)
   const port = parseInt(process.env.PORT || "5000", 10);
-  const host = process.platform === "win32" ? "127.0.0.1" : "0.0.0.0";
-  httpServer.listen(
-    {
-      port,
-      host,
-      reusePort: !process.platform.includes("win32"),
-    },
-    () => {
-      log(`serving on port ${port}`);
-    },
-  );
+  const host = process.env.NODE_ENV === "production" ? "0.0.0.0" : "127.0.0.1";
+  
+  httpServer.listen({ port, host }, () => {
+    log(`Server listening on ${host}:${port}`);
+  });
+
+  httpServer.on("error", (err) => {
+    log(`Server error: ${err}`, "error");
+  });
 })();
