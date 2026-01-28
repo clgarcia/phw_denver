@@ -1,11 +1,11 @@
 {
-  "include": ["server/**/*"],
+  "include": ["server/**/*", "shared/**/*"],
   "compilerOptions": {
     "incremental": true,
     "tsBuildInfoFile": "./node_modules/typescript/tsbuildinfo",
     "noEmit": false,
-    "outDir": "./dist/server",
-    "rootDir": "./server",
+    "outDir": "./dist",
+    "rootDir": ".",
     "module": "ESNext",
     "strict": true,
     "lib": ["esnext", "dom", "dom.iterable"],
