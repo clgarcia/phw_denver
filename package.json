@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "cross-env NODE_ENV=development tsx server/index.ts",
-    "build": "tsc && ls -la dist/server || true",
+    "build": "tsc --listEmittedFiles && ls -la dist/server || true",
     "prestart": "npm run build",
     "start": "node dist/server/index.js",
     "check": "tsc",
