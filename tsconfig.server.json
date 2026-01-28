@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["server/index.ts", "server/routes.ts", "server/static.ts", "server/db.ts", "server/storage.ts", "server/email.ts", "shared/**/*"],
+  "exclude": ["node_modules", "dist", "client", "vite.config.ts", "server/vite.ts", "**/*.test.ts"],
+  "compilerOptions": {
+    "noEmitOnError": false
+  }
+}
