@@ -12,6 +12,7 @@ const viteLogger = createLogger();
 // Sets up Vite middleware and HTML serving for development
 export async function setupVite(server: Server, app: Express) {
   // Load vite config dynamically at runtime
+  // @ts-expect-error - vite.config is excluded from tsconfig but needed at runtime
   const viteConfigModule = await import("../vite.config");
   const viteConfig = viteConfigModule.default;
 
