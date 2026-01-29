@@ -32,7 +32,10 @@ if (!isLocalDb) {
 }
 
 const poolOptions: any = { connectionString: process.env.DATABASE_URL };
-if (!isLocalDb && sslOption) poolOptions.ssl = sslOption;
+// Always apply SSL options for non-local databases
+if (!isLocalDb) {
+  poolOptions.ssl = sslOption || { rejectUnauthorized: false };
+}
 
 const pool = new Pool(poolOptions);
 
