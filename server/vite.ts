@@ -42,7 +42,7 @@ export async function setupVite(server: Server, app: Express) {
   app.use(vite.middlewares);
 
   // Serve index.html for all unmatched routes (SPA fallback)
-  app.use("/{*path}", async (req, res, next) => {
+  app.use("/*", async (req, res, next) => {
     const url = req.originalUrl;
 
     try {
