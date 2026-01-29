@@ -2,6 +2,11 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+
+// Get __dirname in ES module context
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Serves static files and SPA fallback for unmatched routes
 export function serveStatic(app: Express) {
