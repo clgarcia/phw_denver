@@ -91,11 +91,14 @@ let storage: any;
   try {
     // Initialize database (dynamically import storage to avoid top-level ESM failures)
     try {
+      log("Attempting to load ./storage.js");
       const mod = await import("./storage.js");
       storage = mod.storage;
       if (!storage) throw new Error("storage not exported from ./storage.js");
+      log("Successfully loaded storage module");
     } catch (err) {
       log(`Failed to load ./storage.js: ${err}`, "error");
+      console.error("Full error:", err);
       try {
         const files = fs.readdirSync(path.resolve(__dirname));
         log(`Files in dist/server: ${files.join(", ")}`, "error");
@@ -105,17 +108,21 @@ let storage: any;
       throw err;
     }
 
+    log("Initializing database...");
     await storage.initializeDatabase();
     log("Database initialized successfully");
 
     try {
+      log("Attempting to load ./routes.js");
       const mod = await import("./routes.js");
       registerRoutes = mod.registerRoutes;
       if (!registerRoutes) throw new Error("registerRoutes not exported from ./routes.js");
+      log("Registering routes...");
       await registerRoutes(httpServer, app);
       log("Routes registered successfully");
     } catch (err) {
       log(`Failed to load ./routes.js: ${err}`, "error");
+      console.error("Full error:", err);
       try {
         const files = fs.readdirSync(path.resolve(__dirname));
         log(`Files in dist/server: ${files.join(", ")}`, "error");
@@ -126,6 +133,7 @@ let storage: any;
     }
   } catch (dbErr) {
     log(`Startup error: ${dbErr}. Server will still bind to port and serve static files.`, "error");
+    console.error("Full startup error:", dbErr);
   }
 
   // Global error handler for API
