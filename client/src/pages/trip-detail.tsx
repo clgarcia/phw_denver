@@ -8,6 +8,9 @@ import { useQuery } from "@tanstack/react-query";
 import type { Trip } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { TripRegistrationForm } from "@/components/trip-registration-form";
+import { useState } from "react";
 
 
 
@@ -40,6 +43,7 @@ function formatTime(timeString: string): string {
 export default function TripDetail() {
   // Get trip ID from URL params
   const { id } = useParams<{ id: string }>();
+  const [showRegistrationDialog, setShowRegistrationDialog] = useState(false);
 
   // Fetch trip data from API
   const { data: trip, isLoading, error } = useQuery<Trip>({
@@ -224,15 +228,14 @@ export default function TripDetail() {
                     </div>
 
                     {spotsLeft > 0 ? (
-                      <Link href="/register">
-                        <Button 
-                          className="w-full" 
-                          data-testid={`button-register-trip-${trip.id}`}
-                          size="lg"
-                        >
-                          Register for Trip
-                        </Button>
-                      </Link>
+                      <Button 
+                        className="w-full" 
+                        data-testid={`button-register-trip-${trip.id}`}
+                        size="lg"
+                        onClick={() => setShowRegistrationDialog(true)}
+                      >
+                        Register for Trip
+                      </Button>
                     ) : (
                       <Button disabled className="w-full" data-testid="button-trip-full" size="lg">
                         Trip is Full
@@ -251,6 +254,23 @@ export default function TripDetail() {
           )}
         </div>
       </main>
+
+      <Dialog open={showRegistrationDialog} onOpenChange={setShowRegistrationDialog}>
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Register for Trip</DialogTitle>
+            <DialogDescription>
+              Fill out the form below to register for {trip?.name}
+            </DialogDescription>
+          </DialogHeader>
+          {trip?.id && (
+            <TripRegistrationForm 
+              tripId={trip.id} 
+              onSuccess={() => setShowRegistrationDialog(false)} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>

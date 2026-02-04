@@ -8,6 +8,9 @@ import { useQuery } from "@tanstack/react-query";
 import type { Event } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { EventRegistrationForm } from "@/components/event-registration-form";
+import { useState } from "react";
 
 
 function formatDate(dateString: string): string {
@@ -33,6 +36,7 @@ function formatTime(timeString: string): string {
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
+  const [showRegistrationDialog, setShowRegistrationDialog] = useState(false);
 
   const { data: event, isLoading, error } = useQuery<Event>({
     queryKey: ["/api/events", id],
@@ -187,11 +191,14 @@ export default function EventDetail() {
                     </div>
 
                     {spotsLeft > 0 ? (
-                      <Link href={`/register?event=${event.id}`}>
-                        <Button className="w-full" size="lg" data-testid="button-register-event">
-                          Register for This Event
-                        </Button>
-                      </Link>
+                      <Button 
+                        className="w-full" 
+                        size="lg" 
+                        data-testid="button-register-event"
+                        onClick={() => setShowRegistrationDialog(true)}
+                      >
+                        Register for This Event
+                      </Button>
                     ) : (
                       <Button className="w-full" size="lg" disabled>
                         Event Full
@@ -226,6 +233,23 @@ export default function EventDetail() {
           )}
         </div>
       </main>
+
+      <Dialog open={showRegistrationDialog} onOpenChange={setShowRegistrationDialog}>
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Register for Event</DialogTitle>
+            <DialogDescription>
+              Fill out the form below to register for {event?.title}
+            </DialogDescription>
+          </DialogHeader>
+          {event?.id && (
+            <EventRegistrationForm 
+              eventId={event.id} 
+              onSuccess={() => setShowRegistrationDialog(false)} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>

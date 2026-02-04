@@ -69,23 +69,24 @@ export async function sendRegistrationConfirmation(data: RegistrationEmailData):
     return false;
   }
 
-  // Determine type and details for the email
-  const isEvent = !!data.eventTitle;
-  const isTrip = !!data.tripName;
-  const registrationType = isTrip ? "Trip" : isEvent ? "Event" : "Program";
-  const itemName = isTrip ? data.tripName : isEvent ? data.eventTitle : data.programName;
-  const dateInfo = isTrip
-    ? `${formatDate(data.tripDate || "")} - ${formatDate(data.tripEndDate || "")}${data.tripTime ? ` from ${formatTime(data.tripTime)}${data.tripEndTime ? ` - ${formatTime(data.tripEndTime)}` : ''}` : ""}`
-    : isEvent 
-    ? `${formatDate(data.eventDate || "")}${data.eventTime ? ` at ${formatTime(data.eventTime)}` : ""}`
-    : formatDate(data.programStartDate || "");
-  
-  const participationLabel = data.participationType === "volunteer" ? "Volunteer" : "Participant";
+  try {
+    // Determine type and details for the email
+    const isEvent = !!data.eventTitle;
+    const isTrip = !!data.tripName;
+    const registrationType = isTrip ? "Trip" : isEvent ? "Event" : "Program";
+    const itemName = isTrip ? data.tripName : isEvent ? data.eventTitle : data.programName;
+    const dateInfo = isTrip
+      ? `${formatDate(data.tripDate || "")} - ${formatDate(data.tripEndDate || "")}${data.tripTime ? ` from ${formatTime(data.tripTime)}${data.tripEndTime ? ` - ${formatTime(data.tripEndTime)}` : ''}` : ""}`
+      : isEvent 
+      ? `${formatDate(data.eventDate || "")}${data.eventTime ? ` at ${formatTime(data.eventTime)}` : ""}`
+      : formatDate(data.programStartDate || "");
+    
+    const participationLabel = data.participationType === "volunteer" ? "Volunteer" : "Participant";
 
-  const subject = `Registration Confirmation - ${itemName}`;
-  
-  // Plain text body for email
-  const textBody = `
+    const subject = `Registration Confirmation - ${itemName}`;
+    
+    // Plain text body for email
+    const textBody = `
 Hello ${data.recipientName},
 
 Thank you for registering for ${itemName}! 
@@ -101,10 +102,10 @@ We look forward to seeing you there!
 
 Best regards,
 Project Healing Waters - Denver Chapter
-  `.trim();
+    `.trim();
 
-  // HTML body for email
-  const htmlBody = `
+    // HTML body for email
+    const htmlBody = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -142,6 +143,11 @@ Project Healing Waters - Denver Chapter
           <span class="label">Location:</span> ${data.eventLocation}
         </div>
         ` : ""}
+        ${data.tripMeetupLocation ? `
+        <div class="detail-row">
+          <span class="label">Meetup Location:</span> ${data.tripMeetupLocation}
+        </div>
+        ` : ""}
         <div class="detail-row">
           <span class="label">Role:</span> ${participationLabel}
         </div>
@@ -154,10 +160,10 @@ Project Healing Waters - Denver Chapter
     </div>
   </div>
 </body>
-</html>
-  `.trim();
+    `.trim();
 
-  try {
+    console.log(`Sending registration email to ${data.recipientEmail} for ${registrationType}: ${itemName}`);
+    
     await mg.messages.create(MAILGUN_DOMAIN, {
       from: `Project Healing Waters <postmaster@${MAILGUN_DOMAIN}>`,
       to: [data.recipientEmail],
@@ -165,7 +171,8 @@ Project Healing Waters - Denver Chapter
       text: textBody,
       html: htmlBody,
     });
-    console.log(`Registration confirmation email sent to ${data.recipientEmail}`);
+    
+    console.log(`Registration confirmation email successfully sent to ${data.recipientEmail}`);
     return true;
   } catch (error) {
     console.error("Failed to send registration email:", error);
