@@ -12,6 +12,11 @@ if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL environment variable is not set");
 }
 
+console.log("DATABASE_URL set:", !!process.env.DATABASE_URL);
+console.log("DATABASE_URL length:", process.env.DATABASE_URL.length);
+console.log("DATABASE_URL first 50 chars:", process.env.DATABASE_URL.substring(0, 50));
+console.log("DATABASE_URL last 50 chars:", process.env.DATABASE_URL.substring(process.env.DATABASE_URL.length - 50));
+
 // Create a PostgreSQL connection pool
 const isLocalDb = (process.env.DATABASE_URL || "").includes("localhost") || (process.env.DATABASE_URL || "").includes("127.0.0.1");
 
