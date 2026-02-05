@@ -223,6 +223,17 @@ export async function registerRoutes(
         trip = await storage.getTrip(registration.tripId);
       }
 
+      console.log("Registration created:", {
+        id: registration.id,
+        email: registration.email,
+        eventId: registration.eventId,
+        programId: registration.programId,
+        tripId: registration.tripId,
+        hasEvent: !!event,
+        hasProgram: !!program,
+        hasTrip: !!trip,
+      });
+
       sendRegistrationConfirmation({
         recipientEmail: registration.email,
         recipientName: `${registration.firstName} ${registration.lastName}`,
@@ -268,6 +279,30 @@ export async function registerRoutes(
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete registration" });
+    }
+  });
+
+  app.post("/api/registrations/:id/archive", async (req, res) => {
+    try {
+      const registration = await storage.archiveRegistration(req.params.id);
+      if (!registration) {
+        return res.status(404).json({ message: "Registration not found" });
+      }
+      res.json(registration);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to archive registration" });
+    }
+  });
+
+  app.post("/api/registrations/:id/unarchive", async (req, res) => {
+    try {
+      const registration = await storage.unarchiveRegistration(req.params.id);
+      if (!registration) {
+        return res.status(404).json({ message: "Registration not found" });
+      }
+      res.json(registration);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to unarchive registration" });
     }
   });
 

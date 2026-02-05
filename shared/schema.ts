@@ -48,6 +48,7 @@ export const registrations = pgTable("registrations", {
   status: text("status").notNull().default("pending"),
   createdAt: text("created_at").notNull(),
   notes: text("notes"),
+  isArchived: boolean("is_archived").notNull().default(false),
 });
 
 export const trips = pgTable("trips", {

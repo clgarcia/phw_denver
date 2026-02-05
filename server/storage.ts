@@ -43,6 +43,8 @@ export interface IStorage {
   createRegistration(registration: InsertRegistration): Promise<Registration>;
   updateRegistration(id: string, data: Partial<Registration>): Promise<Registration | undefined>;
   deleteRegistration(id: string): Promise<boolean>;
+  archiveRegistration(id: string): Promise<Registration | undefined>;
+  unarchiveRegistration(id: string): Promise<Registration | undefined>;
   
   initializeDatabase(): Promise<void>;
 }
@@ -343,6 +345,18 @@ export class DatabaseStorage implements IStorage {
   async deleteRegistration(id: string): Promise<boolean> {
     const result = await db.delete(registrations).where(eq(registrations.id, id)).returning();
     return result.length > 0;
+  }
+
+  // Archive a registration
+  async archiveRegistration(id: string): Promise<Registration | undefined> {
+    const result = await db.update(registrations).set({ isArchived: true }).where(eq(registrations.id, id)).returning();
+    return result[0];
+  }
+
+  // Unarchive a registration
+  async unarchiveRegistration(id: string): Promise<Registration | undefined> {
+    const result = await db.update(registrations).set({ isArchived: false }).where(eq(registrations.id, id)).returning();
+    return result[0];
   }
 }
 

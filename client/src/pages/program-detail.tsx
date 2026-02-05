@@ -7,6 +7,9 @@ import { Calendar, Users, ArrowLeft, Navigation, CheckCircle } from "lucide-reac
 import { useQuery } from "@tanstack/react-query";
 import type { Program } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ProgramRegistrationForm } from "@/components/program-registration-form";
+import { useState } from "react";
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -19,6 +22,7 @@ function formatDate(dateString: string): string {
 
 export default function ProgramDetail() {
   const { id } = useParams<{ id: string }>();
+  const [showRegistrationDialog, setShowRegistrationDialog] = useState(false);
 
   const { data: program, isLoading, error } = useQuery<Program>({
     queryKey: ["/api/programs", id],
@@ -169,11 +173,18 @@ export default function ProgramDetail() {
                       </div>
                     </div>
                     {program.capacity - program.registeredCount > 0 ? (
-                      <Link href={`/register?program=${program.id}`}>
-                        <Button className="w-full" size="lg" data-testid="button-register-program">
-                          Register for This Program
-                        </Button>
-                      </Link>
+                      <Button 
+                        type="button"
+                        className="w-full" 
+                        size="lg" 
+                        data-testid="button-register-program"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setShowRegistrationDialog(true);
+                        }}
+                      >
+                        Register for This Program
+                      </Button>
                     ) : (
                       <Button className="w-full" size="lg" disabled>
                         Program Full
@@ -207,6 +218,24 @@ export default function ProgramDetail() {
           )}
         </div>
       </main>
+
+      <Dialog open={showRegistrationDialog} onOpenChange={setShowRegistrationDialog}>
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Register for Program</DialogTitle>
+            <DialogDescription>
+              Fill out the form below to register for {program?.name}
+            </DialogDescription>
+          </DialogHeader>
+          {program?.id && (
+            <ProgramRegistrationForm 
+              programId={program.id} 
+              onSuccess={() => setShowRegistrationDialog(false)} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
       <Footer />
     </div>
   );
