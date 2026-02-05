@@ -70,21 +70,24 @@ const JOIN_OPTIONS = [
 
 export default function Register() {
   const { toast } = useToast();
-  const searchString = new URLSearchParams(window.location.search).toString();
   const [, navigate] = useLocation();
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [joinOption, setJoinOption] = useState<string>("");
+  const [preselectedEventId, setPreselectedEventId] = useState<string | undefined>(undefined);
+  const [preselectedProgramId, setPreselectedProgramId] = useState<string | undefined>(undefined);
   
-  // Debug logging
-  console.log('window.location.search:', window.location.search);
-  console.log('searchString:', searchString);
-  
-  const searchParams = new URLSearchParams(searchString);
-  const preselectedEventId = searchParams.get("event") || undefined;
-  const preselectedProgramId = searchParams.get("program") || undefined;
-  
-  console.log('preselectedEventId:', preselectedEventId);
-  console.log('preselectedProgramId:', preselectedProgramId);
+  // Parse query parameters from URL
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const eventId = searchParams.get("event") || undefined;
+    const programId = searchParams.get("program") || undefined;
+    
+    setPreselectedEventId(eventId);
+    setPreselectedProgramId(programId);
+    
+    console.log('Event ID:', eventId);
+    console.log('Program ID:', programId);
+  }, []);
   
   const isEventRegistration = !!preselectedEventId;
   const isProgramRegistration = !!preselectedProgramId;
