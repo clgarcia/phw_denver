@@ -9,7 +9,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import type { Event, Program } from "@shared/schema";
+import type { Event, Program, Trip } from "@shared/schema";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation, useSearch } from "wouter";
@@ -17,6 +17,9 @@ import { Calendar, CheckCircle, Loader2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState } from "react";
 import { useEffect } from "react";
+import { EventRegistrationForm } from "@/components/event-registration-form";
+import { ProgramRegistrationForm } from "@/components/program-registration-form";
+import { TripRegistrationForm } from "@/components/trip-registration-form";
 
 function formatDate(dateString: string): string {
   if (!dateString) return "";
@@ -187,6 +190,36 @@ export default function Register() {
               </div>
             </CardContent>
           </Card>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // If event-specific registration
+  if (isEventRegistration && preselectedEventId) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 py-12">
+          <div className="container mx-auto px-4">
+            <EventRegistrationForm eventId={preselectedEventId} onSuccess={() => setRegistrationSuccess(true)} />
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // If program-specific registration
+  if (isProgramRegistration && preselectedProgramId) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 py-12">
+          <div className="container mx-auto px-4">
+            <ProgramRegistrationForm programId={preselectedProgramId} onSuccess={() => setRegistrationSuccess(true)} />
+          </div>
         </main>
         <Footer />
       </div>
