@@ -75,12 +75,22 @@ export default function Register() {
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [joinOption, setJoinOption] = useState<string>("");
   
+  // Debug logging
+  console.log('useSearch() returned:', searchString);
+  console.log('window.location.search:', window.location.search);
+  
   const searchParams = new URLSearchParams(searchString);
   const preselectedEventId = searchParams.get("event") || undefined;
   const preselectedProgramId = searchParams.get("program") || undefined;
   
+  console.log('preselectedEventId:', preselectedEventId);
+  console.log('preselectedProgramId:', preselectedProgramId);
+  
   const isEventRegistration = !!preselectedEventId;
   const isProgramRegistration = !!preselectedProgramId;
+  
+  console.log('isEventRegistration:', isEventRegistration);
+  console.log('isProgramRegistration:', isProgramRegistration);
 
   const { data: events = [] } = useQuery<Event[]>({
     queryKey: ["/api/events"],
