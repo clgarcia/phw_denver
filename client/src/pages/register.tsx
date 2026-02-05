@@ -75,6 +75,7 @@ export default function Register() {
   const [joinOption, setJoinOption] = useState<string>("");
   const [preselectedEventId, setPreselectedEventId] = useState<string | undefined>(undefined);
   const [preselectedProgramId, setPreselectedProgramId] = useState<string | undefined>(undefined);
+  const [isReady, setIsReady] = useState(false);
   
   // Parse query parameters from URL
   useEffect(() => {
@@ -84,6 +85,7 @@ export default function Register() {
     
     setPreselectedEventId(eventId);
     setPreselectedProgramId(programId);
+    setIsReady(true);
     
     console.log('Event ID:', eventId);
     console.log('Program ID:', programId);
@@ -91,6 +93,46 @@ export default function Register() {
   
   const isEventRegistration = !!preselectedEventId;
   const isProgramRegistration = !!preselectedProgramId;
+  
+  // If event-specific registration
+  if (isReady && isEventRegistration && preselectedEventId) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 py-12">
+          <div className="container mx-auto px-4">
+            <EventRegistrationForm eventId={preselectedEventId} onSuccess={() => setRegistrationSuccess(true)} />
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // If program-specific registration
+  if (isReady && isProgramRegistration && preselectedProgramId) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 py-12">
+          <div className="container mx-auto px-4">
+            <ProgramRegistrationForm programId={preselectedProgramId} onSuccess={() => setRegistrationSuccess(true)} />
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!isReady) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1" />
+        <Footer />
+      </div>
+    );
+  }
   
   console.log('isEventRegistration:', isEventRegistration);
   console.log('isProgramRegistration:', isProgramRegistration);
