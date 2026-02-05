@@ -70,14 +70,14 @@ const JOIN_OPTIONS = [
 
 export default function Register() {
   const { toast } = useToast();
-  const searchString = useSearch();
+  const searchString = new URLSearchParams(window.location.search).toString();
   const [, navigate] = useLocation();
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [joinOption, setJoinOption] = useState<string>("");
   
   // Debug logging
-  console.log('useSearch() returned:', searchString);
   console.log('window.location.search:', window.location.search);
+  console.log('searchString:', searchString);
   
   const searchParams = new URLSearchParams(searchString);
   const preselectedEventId = searchParams.get("event") || undefined;
