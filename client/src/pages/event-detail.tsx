@@ -192,14 +192,10 @@ export default function EventDetail() {
 
                     {spotsLeft > 0 ? (
                       <Button 
-                        type="button"
                         className="w-full" 
                         size="lg" 
                         data-testid="button-register-event"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setShowRegistrationDialog(true);
-                        }}
+                        onClick={() => setShowRegistrationDialog(true)}
                       >
                         Register for This Event
                       </Button>

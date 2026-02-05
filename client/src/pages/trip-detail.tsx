@@ -229,14 +229,10 @@ export default function TripDetail() {
 
                     {spotsLeft > 0 ? (
                       <Button 
-                        type="button"
                         className="w-full" 
                         data-testid={`button-register-trip-${trip.id}`}
                         size="lg"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setShowRegistrationDialog(true);
-                        }}
+                        onClick={() => setShowRegistrationDialog(true)}
                       >
                         Register for Trip
                       </Button>

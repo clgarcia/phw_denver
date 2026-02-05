@@ -174,14 +174,10 @@ export default function ProgramDetail() {
                     </div>
                     {program.capacity - program.registeredCount > 0 ? (
                       <Button 
-                        type="button"
                         className="w-full" 
                         size="lg" 
                         data-testid="button-register-program"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setShowRegistrationDialog(true);
-                        }}
+                        onClick={() => setShowRegistrationDialog(true)}
                       >
                         Register for This Program
                       </Button>
