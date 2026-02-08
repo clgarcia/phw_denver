@@ -1,8 +1,11 @@
 import { Link } from "wouter";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
+import { EventRegistrationForm } from "@/components/event-registration-form";
 import { ArrowRight, Calendar, Clock, MapPin, Users, Heart, Target, Waves } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { Event, Program } from "@shared/schema";
@@ -22,6 +25,8 @@ function formatDate(dateString: string): string {
 }
 
 export default function Home() {
+  const [selectedEventForRegistration, setSelectedEventForRegistration] = useState<Event | null>(null);
+  
   const { data: events = [], isLoading: eventsLoading } = useQuery<Event[]>({
     queryKey: ["/api/events"],
   });
@@ -41,6 +46,12 @@ export default function Home() {
 
   // Use the actual event imageUrl if available, fallback to a stock image
   const getEventImage = (event: Event, index: number) => event.imageUrl || [activityImage1, activityImage2, heroImage, activityImage1][index % 4];
+
+  const handleRegisterEventClick = (e: React.MouseEvent, event: Event) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedEventForRegistration(event);
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -144,7 +155,12 @@ export default function Home() {
                           <span>{event.location}</span>
                         </div>
                         <div className="pt-2">
-                          <Button size="sm" className="w-full bg-[#c73e1d]/90 hover:bg-[#c73e1d] border-[#c73e1d]/90" data-testid={`button-register-event-${event.id}`}>
+                          <Button 
+                            size="sm" 
+                            className="w-full bg-[#c73e1d]/90 hover:bg-[#c73e1d] border-[#c73e1d]/90" 
+                            data-testid={`button-register-event-${event.id}`}
+                            onClick={(e) => handleRegisterEventClick(e, event)}
+                          >
                             Register Now
                           </Button>
                         </div>
@@ -372,6 +388,23 @@ export default function Home() {
           </div>
         </section>
       </main>
+
+      <Dialog open={!!selectedEventForRegistration} onOpenChange={(open) => !open && setSelectedEventForRegistration(null)}>
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Register for Event</DialogTitle>
+            <DialogDescription>
+              Fill out the form below to register for {selectedEventForRegistration?.title}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedEventForRegistration?.id && (
+            <EventRegistrationForm 
+              eventId={selectedEventForRegistration.id} 
+              onSuccess={() => setSelectedEventForRegistration(null)} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>
