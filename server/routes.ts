@@ -172,7 +172,7 @@ export async function registerRoutes(
         if (!event) {
           return res.status(400).json({ message: "Event not found" });
         }
-        if (event.registeredCount >= event.capacity) {
+        if (event.capacity && event.registeredCount >= event.capacity) {
           return res.status(400).json({ message: "Event is full" });
         }
       }
