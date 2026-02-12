@@ -219,9 +219,9 @@ export default function Home() {
                         <span>{program.schedule}</span>
                       </div>
                       <div className="flex items-center justify-end pt-2">
-                        <Link href={`/register?program=${program.id}`}>
-                          <Button size="sm" className="bg-[#c73e1d]/90 hover:bg-[#c73e1d] border-[#c73e1d]/90" data-testid={`button-register-program-${program.id}`}>
-                            Register
+                        <Link href={`/programs/${program.id}`}>
+                          <Button size="sm" className="bg-[#c73e1d]/90 hover:bg-[#c73e1d] border-[#c73e1d]/90" data-testid={`button-details-program-${program.id}`}>
+                            See Details
                           </Button>
                         </Link>
                       </div>
