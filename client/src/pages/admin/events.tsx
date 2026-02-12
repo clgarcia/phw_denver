@@ -111,14 +111,16 @@ export default function AdminEvents() {
     e.preventDefault();
     console.log("Submitting event with imageUrl:", imageUrl);
     const formData = new FormData(e.currentTarget);
+    const capacityValue = formData.get("capacity") as string;
     const data: InsertEvent = {
       title: formData.get("title") as string,
       description: formData.get("description") as string,
       date: formData.get("date") as string,
       time: formData.get("time") as string,
       location: formData.get("location") as string,
-      capacity: parseInt(formData.get("capacity") as string) || 50,
+      capacity: capacityValue ? parseInt(capacityValue) : undefined,
       isActive: formData.get("isActive") === "on",
+      requiresRegistration: formData.get("requiresRegistration") === "on",
       imageUrl,
     };
 
@@ -220,15 +222,15 @@ export default function AdminEvents() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="capacity">Capacity</Label>
+                <Label htmlFor="capacity">Capacity (Optional)</Label>
                 <Input 
                   id="capacity" 
                   name="capacity" 
                   type="number" 
-                  min="1" 
-                  required 
-                  defaultValue={editingEvent?.capacity || 50}
+                  min="1"
+                  defaultValue={editingEvent?.capacity || ""}
                   data-testid="input-event-capacity"
+                  placeholder="Leave empty if no capacity limit"
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -239,6 +241,15 @@ export default function AdminEvents() {
                   data-testid="switch-event-active"
                 />
                 <Label htmlFor="isActive">Active (visible to public)</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch 
+                  id="requiresRegistration" 
+                  name="requiresRegistration" 
+                  defaultChecked={editingEvent?.requiresRegistration ?? true}
+                  data-testid="switch-event-requires-registration"
+                />
+                <Label htmlFor="requiresRegistration">Requires Registration</Label>
               </div>
               <div className="space-y-2">
                 <Label>Event Image</Label>

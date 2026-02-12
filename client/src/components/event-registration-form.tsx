@@ -33,6 +33,24 @@ interface EventRegistrationFormProps {
   onSuccess?: () => void;
 }
 
+function formatTime(timeString: string): string {
+  const [hours, minutes] = timeString.split(":");
+  const hour = parseInt(hours);
+  const minute = parseInt(minutes);
+  const ampm = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${minute.toString().padStart(2, "0")} ${ampm}`;
+}
+
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
 export function EventRegistrationForm({ eventId, onSuccess }: EventRegistrationFormProps) {
   const { toast } = useToast();
 
@@ -94,11 +112,11 @@ export function EventRegistrationForm({ eventId, onSuccess }: EventRegistrationF
           <CardContent className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Date:</span>
-              <span className="font-medium">{new Date(event.date).toLocaleDateString()}</span>
+              <span className="font-medium">{formatDate(event.date)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Time:</span>
-              <span className="font-medium">{event.time}</span>
+              <span className="font-medium">{formatTime(event.time)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Location:</span>

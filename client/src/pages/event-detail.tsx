@@ -172,62 +172,92 @@ export default function EventDetail() {
                     <CardTitle className="text-lg">Registration</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Capacity</span>
-                        <span className="font-medium">{event.registeredCount} / {event.capacity}</span>
-                      </div>
-                      <Progress value={fillPercentage} className="h-2" />
-                    </div>
-
-                    <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
-                      <Users className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="font-medium text-primary">{spotsLeft} spots remaining</p>
-                        <p className="text-sm text-muted-foreground">
-                          {fillPercentage > 80 ? "Filling up fast!" : "Spots available"}
+                    {!event.requiresRegistration ? (
+                      <div className="p-6 text-center rounded-lg bg-muted/50">
+                        <CheckCircle className="h-12 w-12 text-primary mx-auto mb-3" />
+                        <p className="font-medium text-lg">Registration Not Required</p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          This event is open to all. No registration needed.
                         </p>
                       </div>
-                    </div>
+                    ) : event.capacity ? (
+                      <>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Capacity</span>
+                            <span className="font-medium">{event.registeredCount} / {event.capacity}</span>
+                          </div>
+                          <Progress value={fillPercentage} className="h-2" />
+                        </div>
 
-                    {spotsLeft > 0 ? (
-                      <Button 
-                        className="w-full" 
-                        size="lg" 
-                        data-testid="button-register-event"
-                        onClick={() => setShowRegistrationDialog(true)}
-                      >
-                        Register for This Event
-                      </Button>
+                        <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
+                          <Users className="h-5 w-5 text-primary" />
+                          <div>
+                            <p className="font-medium text-primary">{spotsLeft} spots remaining</p>
+                            <p className="text-sm text-muted-foreground">
+                              {fillPercentage > 80 ? "Filling up fast!" : "Spots available"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {spotsLeft > 0 ? (
+                          <Button 
+                            className="w-full" 
+                            size="lg" 
+                            data-testid="button-register-event"
+                            onClick={() => setShowRegistrationDialog(true)}
+                          >
+                            Register for This Event
+                          </Button>
+                        ) : (
+                          <Button className="w-full" size="lg" disabled>
+                            Event Full
+                          </Button>
+                        )}
+                      </>
                     ) : (
-                      <Button className="w-full" size="lg" disabled>
-                        Event Full
-                      </Button>
+                      <div className="p-6 text-center rounded-lg bg-muted/50">
+                        <Users className="h-12 w-12 text-primary mx-auto mb-3" />
+                        <p className="font-medium text-lg">Registration Available</p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Unlimited spaces - register now!
+                        </p>
+                        <Button 
+                          className="w-full mt-4" 
+                          size="lg" 
+                          data-testid="button-register-event"
+                          onClick={() => setShowRegistrationDialog(true)}
+                        >
+                          Register for This Event
+                        </Button>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">What to Expect</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-3">
-                      <li className="flex items-start gap-3">
-                        <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
-                        <span className="text-sm">Easy online registration</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
-                        <span className="text-sm">Confirmation email sent immediately</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
-                        <span className="text-sm">Reminder before the event</span>
-                      </li>
-                    </ul>
-                  </CardContent>
-                </Card>
+                {event.requiresRegistration && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">What to Expect</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="space-y-3">
+                        <li className="flex items-start gap-3">
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                          <span className="text-sm">Easy online registration</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                          <span className="text-sm">Confirmation email sent immediately</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                          <span className="text-sm">Reminder before the event</span>
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </div>
           )}

@@ -15,10 +15,11 @@ export const events = pgTable("events", {
   date: text("date").notNull(),
   time: text("time").notNull(),
   location: text("location").notNull(),
-  capacity: integer("capacity").notNull(),
+  capacity: integer("capacity"),
   registeredCount: integer("registered_count").notNull().default(0),
   imageUrl: text("image_url"),
   isActive: boolean("is_active").notNull().default(true),
+  requiresRegistration: boolean("requires_registration").notNull().default(true),
 });
 
 export const programs = pgTable("programs", {

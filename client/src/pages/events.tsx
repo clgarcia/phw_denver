@@ -139,12 +139,21 @@ export default function Events() {
                           <span>{event.location}</span>
                         </div>
                         <div className="flex items-center justify-between pt-2">
-                          <div className="flex items-center gap-2 text-sm">
-                            <Users className="h-4 w-4 text-primary" />
-                            <span className="text-primary font-medium">
-                              {event.capacity - event.registeredCount} spots left
-                            </span>
-                          </div>
+                          {event.capacity ? (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Users className="h-4 w-4 text-primary" />
+                              <span className="text-primary font-medium">
+                                {event.capacity - event.registeredCount} spots left
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Users className="h-4 w-4 text-primary" />
+                              <span className="text-primary font-medium">
+                                Unlimited spaces
+                              </span>
+                            </div>
+                          )}
                           <Button size="sm" variant="outline" data-testid={`button-view-event-${event.id}`}>
                             View Details
                           </Button>

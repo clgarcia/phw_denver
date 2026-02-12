@@ -69,6 +69,7 @@ export class DatabaseStorage implements IStorage {
       location: "Mountain View Convention Center",
       capacity: 150,
       isActive: true,
+      requiresRegistration: true,
     });
     
     const event2 = await this.createEvent({
@@ -79,6 +80,7 @@ export class DatabaseStorage implements IStorage {
       location: "Community Library, Main Hall",
       capacity: 75,
       isActive: true,
+      requiresRegistration: false,
     });
     
     await this.createEvent({
@@ -89,6 +91,7 @@ export class DatabaseStorage implements IStorage {
       location: "Clear Creek State Park",
       capacity: 20,
       isActive: true,
+      requiresRegistration: true,
     });
 
     await this.createEvent({
@@ -99,6 +102,7 @@ export class DatabaseStorage implements IStorage {
       location: "Riverside Park Pavilion",
       capacity: 25,
       isActive: true,
+      requiresRegistration: true,
     });
 
     const program1 = await this.createProgram({
