@@ -21,8 +21,12 @@ export function serveStatic(app: Express) {
   // Serve static files from the build directory
   app.use(express.static(distPath));
 
-  // Fallback to index.html for SPA routing
-  app.use((_req, res) => {
+  // Fallback to index.html for SPA routing (but not for API routes)
+  app.use((req, res) => {
+    // Don't serve index.html for API routes - let them 404 properly
+    if (req.path.startsWith("/api")) {
+      return res.status(404).json({ message: "API endpoint not found" });
+    }
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
