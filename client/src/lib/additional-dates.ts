@@ -27,7 +27,10 @@ export function parseAdditionalDates(jsonString: string | null | undefined): Dat
 }
 
 export function formatDate(dateString: string): string {
-  const date = new Date(dateString);
+  // Parse date string as YYYY-MM-DD format to avoid timezone issues
+  // This ensures the date is treated as local time, not UTC
+  const [year, month, day] = dateString.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',

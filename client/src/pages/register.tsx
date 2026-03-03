@@ -24,7 +24,8 @@ import { PinVerificationModal } from "@/components/pin-verification-modal";
 
 function formatDate(dateString: string): string {
   if (!dateString) return "";
-  const date = new Date(dateString);
+  const [year, month, day] = dateString.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
   if (isNaN(date.getTime())) return "";
   return date.toLocaleDateString('en-US', { 
     year: 'numeric', 
