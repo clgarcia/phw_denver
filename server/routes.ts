@@ -182,7 +182,7 @@ export async function registerRoutes(
         if (!program) {
           return res.status(400).json({ message: "Program not found" });
         }
-        if (program.registeredCount >= program.capacity) {
+        if (program.capacity && program.registeredCount >= program.capacity) {
           return res.status(400).json({ message: "Program is full" });
         }
       }
@@ -240,15 +240,15 @@ export async function registerRoutes(
         participationType: registration.participationType || "participant",
         eventTitle: event?.title,
         eventDate: event?.date,
-        eventTime: event?.time,
+        eventTime: event?.time ?? undefined,
         eventLocation: event?.location,
         programName: program?.name,
         programStartDate: program?.startDate,
         tripName: trip?.name,
         tripDate: trip?.date,
         tripEndDate: trip?.endDate,
-        tripTime: trip?.time,
-        tripEndTime: trip?.endTime,
+        tripTime: trip?.time ?? undefined,
+        tripEndTime: trip?.endTime ?? undefined,
         tripMeetupLocation: trip?.meetupLocation,
       }).catch(err => console.error("Email send failed:", err));
 
