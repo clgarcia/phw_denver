@@ -364,6 +364,30 @@ export async function registerRoutes(
     }
   });
 
+  // Settings endpoints
+  app.get("/api/settings/registration-pin", async (req, res) => {
+    try {
+      const pin = await storage.getRegistrationPin();
+      res.json({ pin: pin || "" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch registration PIN" });
+    }
+  });
+
+  app.post("/api/settings/registration-pin", async (req, res) => {
+    try {
+      const { pin } = req.body;
+      if (!pin) {
+        return res.status(400).json({ message: "PIN is required" });
+      }
+      await storage.setRegistrationPin(pin);
+      res.json({ pin });
+    } catch (error) {
+      console.error("Error saving registration PIN:", error);
+      res.status(500).json({ message: "Failed to save registration PIN", error: error instanceof Error ? error.message : String(error) });
+    }
+  });
+
   // Image upload endpoint
   app.post("/api/upload-image", (req, res) => {
     if (!req.files || !req.files.image) {

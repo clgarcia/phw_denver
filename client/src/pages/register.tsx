@@ -20,6 +20,7 @@ import { useEffect } from "react";
 import { EventRegistrationForm } from "@/components/event-registration-form";
 import { ProgramRegistrationForm } from "@/components/program-registration-form";
 import { TripRegistrationForm } from "@/components/trip-registration-form";
+import { PinVerificationModal } from "@/components/pin-verification-modal";
 
 function formatDate(dateString: string): string {
   if (!dateString) return "";
@@ -74,6 +75,8 @@ export default function Register() {
   const [, navigate] = useLocation();
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [joinOption, setJoinOption] = useState<string>("");
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [urlToOpen, setUrlToOpen] = useState<string | null>(null);
   
   const searchParams = new URLSearchParams(searchString);
   const preselectedEventId = searchParams.get("event") || undefined;
@@ -107,7 +110,7 @@ export default function Register() {
   // Redirect to donation URLs if selected
   useEffect(() => {
     const selected = JOIN_OPTIONS.find(opt => opt.value === joinOption);
-    if (selected && selected.url) {
+    if (selected && selected.url && (joinOption === "donate-denver" || joinOption === "donate-veterans")) {
       window.location.href = selected.url;
     }
   }, [joinOption]);
@@ -243,7 +246,14 @@ export default function Register() {
                     <Select value={joinOption} onValueChange={value => {
                       const selected = JOIN_OPTIONS.find(opt => opt.value === value);
                       if (selected && selected.url) {
-                        window.location.replace(selected.url);
+                        // For participant and volunteer, show PIN modal
+                        if (value === "participant" || value === "volunteer") {
+                          setUrlToOpen(selected.url);
+                          setShowPinModal(true);
+                        } else {
+                          // For donations, redirect immediately
+                          window.location.replace(selected.url);
+                        }
                       }
                       setJoinOption("");
                     }}>
@@ -271,6 +281,19 @@ export default function Register() {
         </section>
         {/* No forms, just redirect on dropdown selection */}
       </main>
+
+      <PinVerificationModal
+        open={showPinModal}
+        onOpenChange={setShowPinModal}
+        onVerified={() => {
+          if (urlToOpen) {
+            window.location.replace(urlToOpen);
+            setUrlToOpen(null);
+          }
+        }}
+        registrationType="participant"
+      />
+
       <Footer />
     </div>
   );

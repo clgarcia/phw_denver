@@ -10,40 +10,20 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TripRegistrationForm } from "@/components/trip-registration-form";
+import { PinVerificationModal } from "@/components/pin-verification-modal";
+import { parseAdditionalDates, formatDate, formatTime } from "@/lib/additional-dates";
 import { useState } from "react";
 
 
-
 // TripDetail page displays detailed information about a specific trip
-
-// Format a date string into a readable format (e.g., Jan 1, 2026)
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric' 
-  });
-}
-
-// Format a time string (HH:mm) into 12-hour format with AM/PM
-function formatTime(timeString: string): string {
-  if (!timeString) return '';
-  try {
-    const [hours, minutes] = timeString.split(':').map(Number);
-    const period = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
-    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
-  } catch {
-    return timeString;
-  }
-}
 
 // Main component for displaying trip details
 export default function TripDetail() {
   // Get trip ID from URL params
   const { id } = useParams<{ id: string }>();
   const [showRegistrationDialog, setShowRegistrationDialog] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [urlToOpen, setUrlToOpen] = useState<string | null>(null);
 
   // Fetch trip data from API
   const { data: trip, isLoading, error } = useQuery<Trip>({
@@ -53,6 +33,22 @@ export default function TripDetail() {
   // Calculate spots left and fill percentage for the trip
   const spotsLeft = trip ? trip.capacity - trip.registeredCount : 0;
   const fillPercentage = trip ? (trip.registeredCount / trip.capacity) * 100 : 0;
+
+  const handleRegisterClick = () => {
+    if (trip?.googleFormUrl) {
+      setUrlToOpen(trip.googleFormUrl);
+      setShowPinModal(true);
+    } else {
+      setShowRegistrationDialog(true);
+    }
+  };
+
+  const handlePinVerified = () => {
+    if (urlToOpen) {
+      window.open(urlToOpen, "_blank");
+      setUrlToOpen(null);
+    }
+  };
 
   // Render trip detail page layout
   return (
@@ -128,7 +124,7 @@ export default function TripDetail() {
                           {trip.name}
                         </CardTitle>
                         <CardDescription className="mt-2">
-                          {formatDate(trip.date)} - {formatDate(trip.endDate)} • {formatTime(trip.time)} - {formatTime(trip.endTime)}
+                          {formatDate(trip.date)} - {formatDate(trip.endDate)} • <span className="military-time">{formatTime(trip.time)} - {formatTime(trip.endTime)}</span>
                         </CardDescription>
                       </div>
                       <Badge variant={trip.isActive ? "default" : "secondary"}>
@@ -163,7 +159,7 @@ export default function TripDetail() {
                         <Clock className="h-5 w-5 text-primary" />
                         <div>
                           <p className="text-sm text-muted-foreground">Time</p>
-                          <p className="font-medium">{formatTime(trip.time)} - {formatTime(trip.endTime)}</p>
+                          <p className="font-medium military-time">{formatTime(trip.time)} - {formatTime(trip.endTime)}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
@@ -195,6 +191,39 @@ export default function TripDetail() {
                         </div>
                       </div>
                     </div>
+
+                    {trip.dateRangeMode && trip.dateRangeStart && trip.dateRangeEnd ? (
+                      <div className="pt-4 border-t">
+                        <h4 className="font-semibold mb-3 text-sm">Trip Date Range</h4>
+                        <div className="p-3 rounded-lg bg-muted/50">
+                          <p className="text-sm text-muted-foreground">
+                            {formatDate(trip.dateRangeStart)} - {formatDate(trip.dateRangeEnd)}
+                          </p>
+                          {trip.dateRangeStartTime && (
+                            <p className="font-medium military-time text-sm mt-1">
+                              {formatTime(trip.dateRangeStartTime)} - {formatTime(trip.dateRangeEndTime || trip.dateRangeStartTime)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ) : trip.additionalDates && parseAdditionalDates(trip.additionalDates).length > 0 ? (
+                      <div className="pt-4 border-t">
+                        <h4 className="font-semibold mb-3 text-sm">Additional Trip Dates</h4>
+                        <div className="space-y-2">
+                          {parseAdditionalDates(trip.additionalDates).map((dateObj, index) => (
+                            <div key={index} className="p-3 rounded-lg bg-muted/50">
+                              <p className="text-sm text-muted-foreground">Date {index + 1}</p>
+                              <p className="font-medium">{formatDate(dateObj.date)}</p>
+                              {(dateObj.startTime || dateObj.endTime) && (
+                                <p className="font-medium military-time text-sm mt-1">
+                                  {formatTime(dateObj.startTime || trip.time)} - {formatTime(dateObj.endTime || trip.endTime)}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
 
                     {trip.tripCoordinatorNames && (
                       <div>
@@ -232,7 +261,7 @@ export default function TripDetail() {
                         className="w-full" 
                         data-testid={`button-register-trip-${trip.id}`}
                         size="lg"
-                        onClick={() => setShowRegistrationDialog(true)}
+                        onClick={handleRegisterClick}
                       >
                         Register for Trip
                       </Button>
@@ -271,7 +300,12 @@ export default function TripDetail() {
           )}
         </DialogContent>
       </Dialog>
-
+      <PinVerificationModal
+        open={showPinModal}
+        onOpenChange={setShowPinModal}
+        onVerified={handlePinVerified}
+        registrationType="trip"
+      />
       <Footer />
     </div>
   );

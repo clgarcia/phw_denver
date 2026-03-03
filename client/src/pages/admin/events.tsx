@@ -55,6 +55,24 @@ export default function AdminEvents() {
       }
     }, [editingEvent]);
   const [imageUploading, setImageUploading] = useState(false);
+  const [additionalDates, setAdditionalDates] = useState<string[]>(["", "", "", "", ""]);
+  const [additionalDatesToWithTimes, setAdditionalDatesToWithTimes] = useState<Array<{date: string, startTime: string, endTime: string}>>([
+    { date: "", startTime: "", endTime: "" },
+    { date: "", startTime: "", endTime: "" },
+    { date: "", startTime: "", endTime: "" },
+    { date: "", startTime: "", endTime: "" },
+    { date: "", startTime: "", endTime: "" },
+  ]);
+  const [dateRangeMode, setDateRangeMode] = useState(false);
+  const [dateRangeStart, setDateRangeStart] = useState("");
+  const [dateRangeEnd, setDateRangeEnd] = useState("");
+  const [dateRangeStartTime, setDateRangeStartTime] = useState("");
+  const [dateRangeEndTime, setDateRangeEndTime] = useState("");
+  const [eventStartTime, setEventStartTime] = useState("");
+  const [eventEndTime, setEventEndTime] = useState("");
+  const [hasCapacityLimit, setHasCapacityLimit] = useState(false);
+  const [participantCapacity, setParticipantCapacity] = useState("");
+  const [volunteerCapacity, setVolunteerCapacity] = useState("");
 
   const { data: events = [], isLoading } = useQuery<Event[]>({
     queryKey: ["/api/events"],
@@ -111,17 +129,46 @@ export default function AdminEvents() {
     e.preventDefault();
     console.log("Submitting event with imageUrl:", imageUrl);
     const formData = new FormData(e.currentTarget);
-    const capacityValue = formData.get("capacity") as string;
+    
+    let additionalDatesJson: string | undefined = undefined;
+    
+    if (dateRangeMode) {
+      // Range mode - no additional dates array needed
+      additionalDatesJson = undefined;
+    } else {
+      // Individual dates mode - filter and collect dates with start/end times
+      const filteredDates = additionalDatesToWithTimes
+        .filter(d => d.date.trim() !== "")
+        .map(d => ({
+          date: d.date,
+          startTime: d.startTime || undefined,
+          endTime: d.endTime || undefined
+        }));
+      additionalDatesJson = filteredDates.length > 0 
+        ? JSON.stringify(filteredDates)
+        : undefined;
+    }
+    
     const data: InsertEvent = {
       title: formData.get("title") as string,
       description: formData.get("description") as string,
       date: formData.get("date") as string,
-      time: formData.get("time") as string,
+      time: undefined,
+      startTime: eventStartTime || undefined,
+      endTime: eventEndTime || undefined,
       location: formData.get("location") as string,
-      capacity: capacityValue ? parseInt(capacityValue) : undefined,
+      capacity: hasCapacityLimit && participantCapacity ? parseInt(participantCapacity) : undefined,
+      volunteerCapacity: hasCapacityLimit && volunteerCapacity ? parseInt(volunteerCapacity) : undefined,
       isActive: formData.get("isActive") === "on",
       requiresRegistration: formData.get("requiresRegistration") === "on",
       imageUrl,
+      googleFormUrl: (formData.get("googleFormUrl") as string) || undefined,
+      additionalDates: additionalDatesJson,
+      dateRangeMode: dateRangeMode || undefined,
+      dateRangeStart: dateRangeMode ? dateRangeStart : undefined,
+      dateRangeEnd: dateRangeMode ? dateRangeEnd : undefined,
+      dateRangeStartTime: dateRangeMode ? dateRangeStartTime : undefined,
+      dateRangeEndTime: dateRangeMode ? dateRangeEndTime : undefined,
     };
 
     console.log("Event form data to submit:", data);
@@ -134,12 +181,79 @@ export default function AdminEvents() {
 
   const openEditDialog = (event: Event) => {
     setEditingEvent(event);
+    
+    // Set single date start/end times
+    setEventStartTime(event.startTime || "");
+    setEventEndTime(event.endTime || "");
+    
+    // Set capacity fields
+    setHasCapacityLimit(!!(event.capacity || event.volunteerCapacity));
+    setParticipantCapacity(event.capacity?.toString() || "");
+    setVolunteerCapacity(event.volunteerCapacity?.toString() || "");
+    
+    // Set date range mode
+    setDateRangeMode(event.dateRangeMode || false);
+    setDateRangeStart(event.dateRangeStart || "");
+    setDateRangeEnd(event.dateRangeEnd || "");
+    setDateRangeStartTime(event.dateRangeStartTime || "");
+    setDateRangeEndTime(event.dateRangeEndTime || "");
+    
+    // Parse additional dates if they exist
+    if (event.additionalDates) {
+      try {
+        const parsed = JSON.parse(event.additionalDates);
+        // Handle multiple formats: old (date strings), v1 ({date, time}), new ({date, startTime, endTime})
+        const datesWithTimes = parsed.map((item: any) => {
+          if (typeof item === 'string') {
+            return { date: item, startTime: "", endTime: "" };
+          }
+          // Handle both old format with 'time' and new format with 'startTime/endTime'
+          return {
+            date: item.date || "",
+            startTime: item.startTime || item.time || "",
+            endTime: item.endTime || ""
+          };
+        });
+        // Pad with empty slots to always have 5
+        while (datesWithTimes.length < 5) {
+          datesWithTimes.push({ date: "", startTime: "", endTime: "" });
+        }
+        setAdditionalDatesToWithTimes(datesWithTimes);
+      } catch {
+        setAdditionalDatesToWithTimes([
+          { date: "", startTime: "", endTime: "" },
+          { date: "", startTime: "", endTime: "" },
+          { date: "", startTime: "", endTime: "" },
+          { date: "", startTime: "", endTime: "" },
+          { date: "", startTime: "", endTime: "" },
+        ]);
+      }
+    }
+    
     setDialogOpen(true);
   };
 
   const closeDialog = () => {
     setDialogOpen(false);
     setEditingEvent(null);
+    setAdditionalDates(["", "", "", "", ""]);
+    setAdditionalDatesToWithTimes([
+      { date: "", startTime: "", endTime: "" },
+      { date: "", startTime: "", endTime: "" },
+      { date: "", startTime: "", endTime: "" },
+      { date: "", startTime: "", endTime: "" },
+      { date: "", startTime: "", endTime: "" },
+    ]);
+    setDateRangeMode(false);
+    setDateRangeStart("");
+    setHasCapacityLimit(false);
+    setParticipantCapacity("");
+    setVolunteerCapacity("");
+    setDateRangeEnd("");
+    setDateRangeStartTime("");
+    setDateRangeEndTime("");
+    setEventStartTime("");
+    setEventEndTime("");
   };
 
   return (
@@ -200,16 +314,147 @@ export default function AdminEvents() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="time">Time</Label>
+                  <Label htmlFor="eventStartTime">Start Time (Military)</Label>
                   <Input 
-                    id="time" 
-                    name="time" 
-                    type="time" 
-                    required 
-                    defaultValue={editingEvent?.time}
-                    data-testid="input-event-time"
+                    id="eventStartTime" 
+                    type="text" 
+                    pattern="\d{2}:\d{2}" 
+                    placeholder="HH:mm (e.g., 14:30)"
+                    value={eventStartTime}
+                    onChange={(e) => setEventStartTime(e.target.value)}
+                    data-testid="input-event-start-time"
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="eventEndTime">End Time (Military)</Label>
+                  <Input 
+                    id="eventEndTime" 
+                    type="text" 
+                    pattern="\d{2}:\d{2}" 
+                    placeholder="HH:mm (e.g., 16:00)"
+                    value={eventEndTime}
+                    onChange={(e) => setEventEndTime(e.target.value)}
+                    data-testid="input-event-end-time"
+                  />
+                </div>
+              </div>
+
+              {/* Additional Dates Section */}
+              <div className="space-y-2 border-t pt-4">
+                <div className="flex items-center justify-between">
+                  <Label>Additional Event Options</Label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      {dateRangeMode ? "Date Range" : "Individual Dates"}
+                    </span>
+                    <Switch
+                      checked={dateRangeMode}
+                      onCheckedChange={setDateRangeMode}
+                      data-testid="switch-event-date-range-mode"
+                    />
+                  </div>
+                </div>
+
+                {dateRangeMode ? (
+                  <div className="space-y-3 pt-3">
+                    <p className="text-xs text-muted-foreground">
+                      Define a date range when this event occurs
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="dateRangeStart">Range Start Date</Label>
+                        <Input
+                          id="dateRangeStart"
+                          type="date"
+                          value={dateRangeStart}
+                          onChange={(e) => setDateRangeStart(e.target.value)}
+                          data-testid="input-event-date-range-start"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="dateRangeEnd">Range End Date</Label>
+                        <Input
+                          id="dateRangeEnd"
+                          type="date"
+                          value={dateRangeEnd}
+                          onChange={(e) => setDateRangeEnd(e.target.value)}
+                          data-testid="input-event-date-range-end"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="dateRangeStartTime">Start Time (Military)</Label>
+                        <Input
+                          id="dateRangeStartTime"
+                          type="text"
+                          pattern="\d{2}:\d{2}"
+                          placeholder="HH:mm"
+                          value={dateRangeStartTime}
+                          onChange={(e) => setDateRangeStartTime(e.target.value)}
+                          data-testid="input-event-date-range-start-time"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="dateRangeEndTime">End Time (Military)</Label>
+                        <Input
+                          id="dateRangeEndTime"
+                          type="text"
+                          pattern="\d{2}:\d{2}"
+                          placeholder="HH:mm"
+                          value={dateRangeEndTime}
+                          onChange={(e) => setDateRangeEndTime(e.target.value)}
+                          data-testid="input-event-date-range-end-time"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3 pt-3">
+                    <p className="text-xs text-muted-foreground">
+                      Add up to 5 additional dates with start and end times (military format, optional). Leave blank to skip.
+                    </p>
+                    <div className="space-y-2">
+                      {additionalDatesToWithTimes.map((item, index) => (
+                        <div key={index} className="grid grid-cols-3 gap-2">
+                          <Input
+                            type="date"
+                            value={item.date}
+                            onChange={(e) => {
+                              const newItems = [...additionalDatesToWithTimes];
+                              newItems[index].date = e.target.value;
+                              setAdditionalDatesToWithTimes(newItems);
+                            }}
+                            placeholder={`Date ${index + 1}`}
+                            data-testid={`input-event-additional-date-${index + 1}`}
+                          />
+                          <Input
+                            type="text"
+                            pattern="\d{2}:\d{2}"
+                            value={item.startTime}
+                            onChange={(e) => {
+                              const newItems = [...additionalDatesToWithTimes];
+                              newItems[index].startTime = e.target.value;
+                              setAdditionalDatesToWithTimes(newItems);
+                            }}
+                            placeholder="Start HH:mm"
+                            data-testid={`input-event-additional-start-time-${index + 1}`}
+                          />
+                          <Input
+                            type="text"
+                            pattern="\d{2}:\d{2}"
+                            value={item.endTime}
+                            onChange={(e) => {
+                              const newItems = [...additionalDatesToWithTimes];
+                              newItems[index].endTime = e.target.value;
+                              setAdditionalDatesToWithTimes(newItems);
+                            }}
+                            placeholder="End HH:mm"
+                            data-testid={`input-event-additional-end-time-${index + 1}`}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="location">Location</Label>
@@ -221,16 +466,51 @@ export default function AdminEvents() {
                   data-testid="input-event-location"
                 />
               </div>
+              <div className="flex items-center gap-2">
+                <Switch 
+                  checked={hasCapacityLimit}
+                  onCheckedChange={setHasCapacityLimit}
+                  data-testid="switch-event-capacity-limit"
+                />
+                <Label>Has Capacity Limit</Label>
+              </div>
+              {hasCapacityLimit && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="participantCapacity">Participant Capacity</Label>
+                    <Input 
+                      id="participantCapacity" 
+                      type="number" 
+                      min="1"
+                      value={participantCapacity}
+                      onChange={(e) => setParticipantCapacity(e.target.value)}
+                      data-testid="input-event-participant-capacity"
+                      placeholder="Enter participant capacity"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="volunteerCapacity">Volunteer Capacity</Label>
+                    <Input 
+                      id="volunteerCapacity" 
+                      type="number" 
+                      min="1"
+                      value={volunteerCapacity}
+                      onChange={(e) => setVolunteerCapacity(e.target.value)}
+                      data-testid="input-event-volunteer-capacity"
+                      placeholder="Enter volunteer capacity"
+                    />
+                  </div>
+                </div>
+              )}
               <div className="space-y-2">
-                <Label htmlFor="capacity">Capacity (Optional)</Label>
+                <Label htmlFor="googleFormUrl">Google Form URL (Optional)</Label>
                 <Input 
-                  id="capacity" 
-                  name="capacity" 
-                  type="number" 
-                  min="1"
-                  defaultValue={editingEvent?.capacity || ""}
-                  data-testid="input-event-capacity"
-                  placeholder="Leave empty if no capacity limit"
+                  id="googleFormUrl" 
+                  name="googleFormUrl" 
+                  type="url"
+                  defaultValue={editingEvent?.googleFormUrl || ""}
+                  data-testid="input-event-google-form-url"
+                  placeholder="https://forms.google.com/..."
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -307,7 +587,7 @@ export default function AdminEvents() {
                     {event.isActive ? "Active" : "Inactive"}
                   </Badge>
                 </div>
-                <CardDescription>{formatDate(event.date)} at {event.time}</CardDescription>
+                <CardDescription>{formatDate(event.date)} at <span className="military-time">{event.time}</span></CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>

@@ -9,24 +9,35 @@ import type { Program } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ProgramRegistrationForm } from "@/components/program-registration-form";
+import { PinVerificationModal } from "@/components/pin-verification-modal";
+import { parseAdditionalDates, formatDate, formatTime } from "@/lib/additional-dates";
 import { useState } from "react";
-
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
-}
 
 export default function ProgramDetail() {
   const { id } = useParams<{ id: string }>();
   const [showRegistrationDialog, setShowRegistrationDialog] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [urlToOpen, setUrlToOpen] = useState<string | null>(null);
 
   const { data: program, isLoading, error } = useQuery<Program>({
     queryKey: ["/api/programs", id],
   });
+
+  const handleRegisterClick = () => {
+    if (program?.googleFormUrl) {
+      setUrlToOpen(program.googleFormUrl);
+      setShowPinModal(true);
+    } else {
+      setShowRegistrationDialog(true);
+    }
+  };
+
+  const handlePinVerified = () => {
+    if (urlToOpen) {
+      window.open(urlToOpen, "_blank");
+      setUrlToOpen(null);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -145,6 +156,41 @@ export default function ProgramDetail() {
                         </div>
                       </div>
                     </div>
+
+                    {program.dateRangeMode && program.dateRangeStart && program.dateRangeEnd ? (
+                      <div className="pt-4 border-t">
+                        <h4 className="font-semibold mb-3 text-sm">Program Date Range</h4>
+                        <div className="p-3 rounded-lg bg-muted/50">
+                          <p className="text-sm text-muted-foreground">
+                            {formatDate(program.dateRangeStart)} - {formatDate(program.dateRangeEnd)}
+                          </p>
+                          {program.dateRangeStartTime && (
+                            <p className="font-medium military-time text-sm mt-1">
+                              {formatTime(program.dateRangeStartTime)} - {formatTime(program.dateRangeEndTime || program.dateRangeStartTime)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ) : program.additionalDates && parseAdditionalDates(program.additionalDates).length > 0 ? (
+                      <div className="pt-4 border-t">
+                        <h4 className="font-semibold mb-3 text-sm">Additional Dates</h4>
+                        <div className="space-y-2">
+                          {parseAdditionalDates(program.additionalDates).map((dateObj, index) => (
+                            <div key={index} className="p-3 rounded-lg bg-muted/50">
+                              <p className="text-sm text-muted-foreground">Date {index + 1}</p>
+                              <p className="font-medium">{formatDate(dateObj.date)}</p>
+                              {dateObj.startTime && dateObj.endTime ? (
+                                <p className="font-medium military-time text-sm mt-1">{formatTime(dateObj.startTime)} - {formatTime(dateObj.endTime)}</p>
+                              ) : dateObj.startTime ? (
+                                <p className="font-medium military-time text-sm mt-1">{formatTime(dateObj.startTime)}</p>
+                              ) : dateObj.time ? (
+                                <p className="font-medium military-time text-sm mt-1">{formatTime(dateObj.time)}</p>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
                   </CardContent>
                 </Card>
               </div>
@@ -177,7 +223,7 @@ export default function ProgramDetail() {
                         className="w-full" 
                         size="lg" 
                         data-testid="button-register-program"
-                        onClick={() => setShowRegistrationDialog(true)}
+                        onClick={handleRegisterClick}
                       >
                         Register for This Program
                       </Button>
@@ -231,6 +277,13 @@ export default function ProgramDetail() {
           )}
         </DialogContent>
       </Dialog>
+
+      <PinVerificationModal
+        open={showPinModal}
+        onOpenChange={setShowPinModal}
+        onVerified={handlePinVerified}
+        registrationType="program"
+      />
 
       <Footer />
     </div>

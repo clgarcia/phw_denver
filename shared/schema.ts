@@ -8,18 +8,33 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
 });
 
+export const settings = pgTable("settings", {
+  key: varchar("key", { length: 100 }).primaryKey(),
+  value: text("value").notNull(),
+});
+
 export const events = pgTable("events", {
   id: varchar("id", { length: 36 }).primaryKey(),
   title: text("title").notNull(),
   description: text("description").notNull(),
   date: text("date").notNull(),
-  time: text("time").notNull(),
+  time: text("time"),
+  startTime: text("start_time"),
+  endTime: text("end_time"),
   location: text("location").notNull(),
   capacity: integer("capacity"),
+  volunteerCapacity: integer("volunteer_capacity"),
   registeredCount: integer("registered_count").notNull().default(0),
   imageUrl: text("image_url"),
+  googleFormUrl: text("google_form_url"),
   isActive: boolean("is_active").notNull().default(true),
   requiresRegistration: boolean("requires_registration").notNull().default(true),
+  additionalDates: text("additional_dates"), // JSON array of {date, startTime, endTime} objects for individual dates
+  dateRangeMode: boolean("date_range_mode"), // true for range, false/null for individual dates
+  dateRangeStart: text("date_range_start"), // For range mode: start date
+  dateRangeEnd: text("date_range_end"), // For range mode: end date
+  dateRangeStartTime: text("date_range_start_time"), // For range mode: start time
+  dateRangeEndTime: text("date_range_end_time"), // For range mode: end time
 });
 
 export const programs = pgTable("programs", {
@@ -30,10 +45,20 @@ export const programs = pgTable("programs", {
   endDate: text("end_date").notNull(),
   schedule: text("schedule").notNull(),
   // price removed
-  capacity: integer("capacity").notNull(),
+  capacity: integer("capacity"),
+  volunteerCapacity: integer("volunteer_capacity"),
+  startTime: text("start_time"),
+  endTime: text("end_time"),
   registeredCount: integer("registered_count").notNull().default(0),
   imageUrl: text("image_url"),
+  googleFormUrl: text("google_form_url"),
   isActive: boolean("is_active").notNull().default(true),
+  additionalDates: text("additional_dates"), // JSON array of {date, startTime, endTime} objects for individual dates
+  dateRangeMode: boolean("date_range_mode"), // true for range, false/null for individual dates
+  dateRangeStart: text("date_range_start"), // For range mode: start date
+  dateRangeEnd: text("date_range_end"), // For range mode: end date
+  dateRangeStartTime: text("date_range_start_time"), // For range mode: start time
+  dateRangeEndTime: text("date_range_end_time"), // For range mode: end time
 });
 
 export const registrations = pgTable("registrations", {
@@ -58,8 +83,9 @@ export const trips = pgTable("trips", {
   description: text("description").notNull(),
   date: text("date").notNull(),
   endDate: text("end_date").notNull(),
-  time: text("time").notNull(),
-  endTime: text("end_time").notNull(),
+  time: text("time"),
+  startTime: text("start_time"),
+  endTime: text("end_time"),
   meetupLocation: text("meetup_location").notNull(),
   destination: text("destination").notNull(),
   capacity: integer("capacity").notNull(),
@@ -72,7 +98,14 @@ export const trips = pgTable("trips", {
   volunteerCapacity: integer("volunteer_capacity").notNull(),
   volunteerNames: text("volunteer_names"), // JSON string or comma-separated
   imageUrl: text("image_url"),
+  googleFormUrl: text("google_form_url"),
   isActive: boolean("is_active").notNull().default(true),
+  additionalDates: text("additional_dates"), // JSON array of {date, startTime, endTime} objects for individual dates
+  dateRangeMode: boolean("date_range_mode"), // true for range, false/null for individual dates
+  dateRangeStart: text("date_range_start"), // For range mode: start date
+  dateRangeEnd: text("date_range_end"), // For range mode: end date
+  dateRangeStartTime: text("date_range_start_time"), // For range mode: start time
+  dateRangeEndTime: text("date_range_end_time"), // For range mode: end time
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({

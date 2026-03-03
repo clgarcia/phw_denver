@@ -5,7 +5,7 @@ import {
   type Program, type InsertProgram,
   type Trip, type InsertTrip,
   type Registration, type InsertRegistration,
-  users, events, programs, trips, registrations
+  users, events, programs, trips, registrations, settings
 } from "../shared/schema.js";
 import { db } from "./db.js";
 import { eq, sql } from "drizzle-orm";
@@ -45,6 +45,9 @@ export interface IStorage {
   deleteRegistration(id: string): Promise<boolean>;
   archiveRegistration(id: string): Promise<Registration | undefined>;
   unarchiveRegistration(id: string): Promise<Registration | undefined>;
+  
+  getRegistrationPin(): Promise<string | null>;
+  setRegistrationPin(pin: string): Promise<void>;
   
   initializeDatabase(): Promise<void>;
 }
@@ -361,6 +364,27 @@ export class DatabaseStorage implements IStorage {
   async unarchiveRegistration(id: string): Promise<Registration | undefined> {
     const result = await db.update(registrations).set({ isArchived: false }).where(eq(registrations.id, id)).returning();
     return result[0];
+  }
+
+  // Get the global registration PIN
+  async getRegistrationPin(): Promise<string | null> {
+    const result = await db.select().from(settings).where(eq(settings.key, "registration_pin"));
+    return result[0]?.value || null;
+  }
+
+  // Set the global registration PIN
+  async setRegistrationPin(pin: string): Promise<void> {
+    try {
+      const existing = await db.select().from(settings).where(eq(settings.key, "registration_pin"));
+      if (existing.length > 0) {
+        await db.update(settings).set({ value: pin }).where(eq(settings.key, "registration_pin"));
+      } else {
+        await db.insert(settings).values({ key: "registration_pin", value: pin });
+      }
+    } catch (error) {
+      console.error("Error in setRegistrationPin:", error);
+      throw error;
+    }
   }
 }
 

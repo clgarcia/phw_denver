@@ -10,33 +10,20 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EventRegistrationForm } from "@/components/event-registration-form";
+import { PinVerificationModal } from "@/components/pin-verification-modal";
+import { parseAdditionalDates, formatDate as formatDateUtil, formatTime } from "@/lib/additional-dates";
 import { useState } from "react";
 
 
 function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-}
-
-function formatTime(timeString: string): string {
-  if (!timeString) return '';
-  try {
-    const [hours, minutes] = timeString.split(':').map(Number);
-    const period = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
-    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
-  } catch {
-    return timeString;
-  }
+  return formatDateUtil(dateString);
 }
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
   const [showRegistrationDialog, setShowRegistrationDialog] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [urlToOpen, setUrlToOpen] = useState<string | null>(null);
 
   const { data: event, isLoading, error } = useQuery<Event>({
     queryKey: ["/api/events", id],
@@ -44,6 +31,22 @@ export default function EventDetail() {
 
   const spotsLeft = event ? event.capacity - event.registeredCount : 0;
   const fillPercentage = event ? (event.registeredCount / event.capacity) * 100 : 0;
+
+  const handleRegisterClick = () => {
+    if (event?.googleFormUrl) {
+      setUrlToOpen(event.googleFormUrl);
+      setShowPinModal(true);
+    } else {
+      setShowRegistrationDialog(true);
+    }
+  };
+
+  const handlePinVerified = () => {
+    if (urlToOpen) {
+      window.open(urlToOpen, "_blank");
+      setUrlToOpen(null);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -124,7 +127,7 @@ export default function EventDetail() {
                         <CardTitle className="text-2xl md:text-3xl" data-testid="text-event-title">
                           {event.title}
                         </CardTitle>
-                        <CardDescription className="mt-2">{formatDate(event.date)} at {formatTime(event.time)}</CardDescription>
+                        <CardDescription className="mt-2">{formatDate(event.date)} at <span className="military-time">{formatTime(event.time)}</span></CardDescription>
                       </div>
                       <Badge variant={event.isActive ? "default" : "secondary"}>
                         {event.isActive ? "Active" : "Inactive"}
@@ -151,7 +154,7 @@ export default function EventDetail() {
                         <Clock className="h-5 w-5 text-primary" />
                         <div>
                           <p className="text-sm text-muted-foreground">Time</p>
-                          <p className="font-medium">{formatTime(event.time)}</p>
+                          <p className="font-medium military-time">{formatTime(event.time)}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
@@ -162,6 +165,39 @@ export default function EventDetail() {
                         </div>
                       </div>
                     </div>
+
+                    {event.dateRangeMode && event.dateRangeStart && event.dateRangeEnd ? (
+                      <div className="pt-4 border-t">
+                        <h4 className="font-semibold mb-3 text-sm">Event Date Range</h4>
+                        <div className="p-3 rounded-lg bg-muted/50">
+                          <p className="text-sm text-muted-foreground">
+                            {formatDateUtil(event.dateRangeStart)} - {formatDateUtil(event.dateRangeEnd)}
+                          </p>
+                          <p className="font-medium military-time mt-1">
+                            {formatTime(event.dateRangeStartTime || event.time)} - {formatTime(event.dateRangeEndTime || event.time)}
+                          </p>
+                        </div>
+                      </div>
+                    ) : event.additionalDates && parseAdditionalDates(event.additionalDates).length > 0 ? (
+                      <div className="pt-4 border-t">
+                        <h4 className="font-semibold mb-3 text-sm">Additional Dates</h4>
+                        <div className="space-y-2">
+                          {parseAdditionalDates(event.additionalDates).map((dateObj, index) => (
+                            <div key={index} className="p-3 rounded-lg bg-muted/50">
+                              <p className="text-sm text-muted-foreground">Date {index + 2}</p>
+                              <p className="font-medium">{formatDateUtil(dateObj.date)}</p>
+                              {dateObj.startTime && dateObj.endTime ? (
+                                <p className="font-medium military-time text-sm mt-1">{formatTime(dateObj.startTime)} - {formatTime(dateObj.endTime)}</p>
+                              ) : dateObj.startTime ? (
+                                <p className="font-medium military-time text-sm mt-1">{formatTime(dateObj.startTime)}</p>
+                              ) : dateObj.time ? (
+                                <p className="font-medium military-time text-sm mt-1">{formatTime(dateObj.time)}</p>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
                   </CardContent>
                 </Card>
               </div>
@@ -205,7 +241,7 @@ export default function EventDetail() {
                             className="w-full" 
                             size="lg" 
                             data-testid="button-register-event"
-                            onClick={() => setShowRegistrationDialog(true)}
+                            onClick={handleRegisterClick}
                           >
                             Register for This Event
                           </Button>
@@ -226,7 +262,7 @@ export default function EventDetail() {
                           className="w-full mt-4" 
                           size="lg" 
                           data-testid="button-register-event"
-                          onClick={() => setShowRegistrationDialog(true)}
+                          onClick={handleRegisterClick}
                         >
                           Register for This Event
                         </Button>
@@ -280,6 +316,13 @@ export default function EventDetail() {
           )}
         </DialogContent>
       </Dialog>
+
+      <PinVerificationModal
+        open={showPinModal}
+        onOpenChange={setShowPinModal}
+        onVerified={handlePinVerified}
+        registrationType="event"
+      />
 
       <Footer />
     </div>

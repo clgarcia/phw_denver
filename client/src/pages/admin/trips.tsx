@@ -47,12 +47,83 @@ export default function AdminTrips() {
   const [deleteTrip, setDeleteTrip] = useState<Trip | null>(null);
   const [imageUrl, setImageUrl] = useState("");
   const [imageUploading, setImageUploading] = useState(false);
+  const [additionalDates, setAdditionalDates] = useState<string[]>(["", "", "", "", ""]);
+  const [additionalDatesToWithTimes, setAdditionalDatesToWithTimes] = useState<Array<{date: string, startTime: string, endTime: string}>>([
+    { date: "", startTime: "", endTime: "" },
+    { date: "", startTime: "", endTime: "" },
+    { date: "", startTime: "", endTime: "" },
+    { date: "", startTime: "", endTime: "" },
+    { date: "", startTime: "", endTime: "" },
+  ]);
+  const [dateRangeMode, setDateRangeMode] = useState(false);
+  const [dateRangeStart, setDateRangeStart] = useState("");
+  const [dateRangeEnd, setDateRangeEnd] = useState("");
+  const [dateRangeStartTime, setDateRangeStartTime] = useState("");
+  const [dateRangeEndTime, setDateRangeEndTime] = useState("");
+  const [tripStartTime, setTripStartTime] = useState("");
+  const [tripEndTime, setTripEndTime] = useState("");
+  const [hasCapacityLimit, setHasCapacityLimit] = useState(true);
+  const [participantCapacity, setParticipantCapacity] = useState("15");
+  const [volunteerCapacity, setVolunteerCapacity] = useState("5");
+  const [hasTripCoordinatorCapacityLimit, setHasTripCoordinatorCapacityLimit] = useState(true);
+  const [tripCoordinatorCapacityValue, setTripCoordinatorCapacityValue] = useState("2");
 
   useEffect(() => {
     if (editingTrip && editingTrip.imageUrl) {
       setImageUrl(editingTrip.imageUrl);
     } else if (!editingTrip) {
       setImageUrl("");
+    }
+  }, [editingTrip]);
+
+  useEffect(() => {
+    if (editingTrip && editingTrip.additionalDates) {
+      try {
+        const parsed = JSON.parse(editingTrip.additionalDates);
+        // Handle both old format (array of date strings) and new format (array of {date, startTime, endTime})
+        const datesWithTimes = parsed.map((item: any) => {
+          if (typeof item === 'string') {
+            return { date: item, startTime: "", endTime: "" };
+          }
+          return {
+            date: item.date || "",
+            startTime: item.startTime || "",
+            endTime: item.endTime || ""
+          };
+        });
+        // Pad with empty slots to always have 5
+        while (datesWithTimes.length < 5) {
+          datesWithTimes.push({ date: "", startTime: "", endTime: "" });
+        }
+        setAdditionalDatesToWithTimes(datesWithTimes);
+      } catch {
+        setAdditionalDatesToWithTimes([
+          { date: "", startTime: "", endTime: "" },
+          { date: "", startTime: "", endTime: "" },
+          { date: "", startTime: "", endTime: "" },
+          { date: "", startTime: "", endTime: "" },
+          { date: "", startTime: "", endTime: "" },
+        ]);
+      }
+    } else {
+      setAdditionalDatesToWithTimes([
+        { date: "", startTime: "", endTime: "" },
+        { date: "", startTime: "", endTime: "" },
+        { date: "", startTime: "", endTime: "" },
+        { date: "", startTime: "", endTime: "" },
+        { date: "", startTime: "", endTime: "" },
+      ]);
+    }
+    
+    // Set date range fields
+    if (editingTrip) {
+      setDateRangeMode(editingTrip.dateRangeMode || false);
+      setDateRangeStart(editingTrip.dateRangeStart || "");
+      setDateRangeEnd(editingTrip.dateRangeEnd || "");
+      setDateRangeStartTime(editingTrip.dateRangeStartTime || "");
+      setDateRangeEndTime(editingTrip.dateRangeEndTime || "");
+      setTripStartTime(editingTrip.startTime || "");
+      setTripEndTime(editingTrip.endTime || "");
     }
   }, [editingTrip]);
 
@@ -71,6 +142,25 @@ export default function AdminTrips() {
       queryClient.invalidateQueries({ queryKey: ["/api/trips"] });
       toast({ title: "Trip created successfully" });
       setDialogOpen(false);
+      setEditingTrip(null);
+      setAdditionalDates(["", "", "", "", ""]);
+      setAdditionalDatesToWithTimes([
+        { date: "", startTime: "", endTime: "" },
+        { date: "", startTime: "", endTime: "" },
+        { date: "", startTime: "", endTime: "" },
+        { date: "", startTime: "", endTime: "" },
+        { date: "", startTime: "", endTime: "" },
+      ]);
+      setDateRangeMode(false);
+      setDateRangeStart("");
+      setDateRangeEnd("");
+      setDateRangeStartTime("");
+      setDateRangeEndTime("");
+      setHasCapacityLimit(true);
+      setParticipantCapacity("15");
+      setVolunteerCapacity("5");
+      setHasTripCoordinatorCapacityLimit(true);
+      setTripCoordinatorCapacityValue("2");
     },
     onError: (error: Error) => {
       toast({ title: "Failed to create trip", description: error.message, variant: "destructive" });
@@ -87,6 +177,24 @@ export default function AdminTrips() {
       toast({ title: "Trip updated successfully" });
       setDialogOpen(false);
       setEditingTrip(null);
+      setAdditionalDates(["", "", "", "", ""]);
+      setAdditionalDatesToWithTimes([
+        { date: "", startTime: "", endTime: "" },
+        { date: "", startTime: "", endTime: "" },
+        { date: "", startTime: "", endTime: "" },
+        { date: "", startTime: "", endTime: "" },
+        { date: "", startTime: "", endTime: "" },
+      ]);
+      setDateRangeMode(false);
+      setDateRangeStart("");
+      setDateRangeEnd("");
+      setDateRangeStartTime("");
+      setDateRangeEndTime("");
+      setHasCapacityLimit(true);
+      setParticipantCapacity("15");
+      setVolunteerCapacity("5");
+      setHasTripCoordinatorCapacityLimit(true);
+      setTripCoordinatorCapacityValue("2");
     },
     onError: (error: Error) => {
       toast({ title: "Failed to update trip", description: error.message, variant: "destructive" });
@@ -111,25 +219,52 @@ export default function AdminTrips() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
+    let additionalDatesJson: string | undefined = undefined;
+    
+    if (dateRangeMode) {
+      // Range mode - no additional dates array needed
+      additionalDatesJson = undefined;
+    } else {
+      // Individual dates mode - filter and collect dates with start/end times
+      const filteredDates = additionalDatesToWithTimes
+        .filter(d => d.date.trim() !== "")
+        .map(d => ({
+          date: d.date,
+          startTime: d.startTime || undefined,
+          endTime: d.endTime || undefined
+        }));
+      additionalDatesJson = filteredDates.length > 0 
+        ? JSON.stringify(filteredDates)
+        : undefined;
+    }
+    
     const tripData: InsertTrip = {
       name: formData.get("name") as string,
       description: formData.get("description") as string,
       date: formData.get("date") as string,
       endDate: formData.get("endDate") as string,
-      time: formData.get("time") as string,
-      endTime: formData.get("endTime") as string,
+      time: undefined,
+      startTime: tripStartTime || undefined,
+      endTime: tripEndTime || undefined,
       meetupLocation: formData.get("meetupLocation") as string,
       destination: formData.get("destination") as string,
-      capacity: parseInt(formData.get("capacity") as string),
+      capacity: hasCapacityLimit && participantCapacity ? parseInt(participantCapacity) : 999999,
       durationDays: parseInt(formData.get("durationDays") as string),
       durationNights: parseInt(formData.get("durationNights") as string),
       difficultyLevel: formData.get("difficultyLevel") as string,
-      tripCoordinatorCapacity: parseInt(formData.get("tripCoordinatorCapacity") as string),
+      tripCoordinatorCapacity: hasTripCoordinatorCapacityLimit && tripCoordinatorCapacityValue ? parseInt(tripCoordinatorCapacityValue) : 999999,
       tripCoordinatorNames: (formData.get("tripCoordinatorNames") as string) || null,
-      volunteerCapacity: parseInt(formData.get("volunteerCapacity") as string),
+      volunteerCapacity: hasCapacityLimit && volunteerCapacity ? parseInt(volunteerCapacity) : 999999,
       volunteerNames: (formData.get("volunteerNames") as string) || null,
       isActive: formData.get("isActive") === "on",
       imageUrl,
+      googleFormUrl: (formData.get("googleFormUrl") as string) || undefined,
+      additionalDates: additionalDatesJson,
+      dateRangeMode: dateRangeMode || undefined,
+      dateRangeStart: dateRangeMode ? dateRangeStart : undefined,
+      dateRangeEnd: dateRangeMode ? dateRangeEnd : undefined,
+      dateRangeStartTime: dateRangeMode ? dateRangeStartTime : undefined,
+      dateRangeEndTime: dateRangeMode ? dateRangeEndTime : undefined,
     };
 
     if (editingTrip) {
@@ -137,16 +272,6 @@ export default function AdminTrips() {
     } else {
       createMutation.mutate(tripData);
     }
-                <div className="space-y-2">
-                  <Label>Trip Image</Label>
-                  <ImageUpload onUpload={setImageUrl} setUploading={setImageUploading} />
-                  {imageUrl && (
-                    <div className="pt-2">
-                      <span className="text-xs text-muted-foreground">Current Image:</span>
-                      <img src={imageUrl} alt="Trip" style={{ maxWidth: 200, marginTop: 4 }} />
-                    </div>
-                  )}
-                </div>
   };
 
   return (
@@ -156,7 +281,32 @@ export default function AdminTrips() {
           <h2 className="text-3xl font-bold tracking-tight" data-testid="text-admin-trips">Trips</h2>
           <p className="text-muted-foreground">Manage your trips and registrations</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={dialogOpen} onOpenChange={(open) => {
+          if (!open) {
+            setDialogOpen(false);
+            setEditingTrip(null);
+            setAdditionalDates(["", "", "", "", ""]);
+            setAdditionalDatesToWithTimes([
+              { date: "", startTime: "", endTime: "" },
+              { date: "", startTime: "", endTime: "" },
+              { date: "", startTime: "", endTime: "" },
+              { date: "", startTime: "", endTime: "" },
+              { date: "", startTime: "", endTime: "" },
+            ]);
+            setDateRangeMode(false);
+            setDateRangeStart("");
+            setDateRangeEnd("");
+            setDateRangeStartTime("");
+            setDateRangeEndTime("");
+            setTripStartTime("");
+            setTripEndTime("");
+            setHasCapacityLimit(true);
+            setParticipantCapacity("15");
+            setVolunteerCapacity("5");
+          } else {
+            setDialogOpen(true);
+          }
+        }}>
           <DialogTrigger asChild>
             <Button 
               className="bg-[#c73e1d]/90 hover:bg-[#c73e1d]"
@@ -225,6 +375,151 @@ export default function AdminTrips() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
+                  <Label htmlFor="tripStartTime">Start Time (Military)</Label>
+                  <Input
+                    id="tripStartTime"
+                    type="text"
+                    pattern="\d{2}:\d{2}"
+                    placeholder="HH:mm (e.g., 14:30)"
+                    value={tripStartTime}
+                    onChange={(e) => setTripStartTime(e.target.value)}
+                    data-testid="input-trip-start-time"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tripEndTime">End Time (Military)</Label>
+                  <Input
+                    id="tripEndTime"
+                    type="text"
+                    pattern="\d{2}:\d{2}"
+                    placeholder="HH:mm (e.g., 16:00)"
+                    value={tripEndTime}
+                    onChange={(e) => setTripEndTime(e.target.value)}
+                    data-testid="input-trip-end-time"
+                  />
+                </div>
+              </div>
+
+              {/* Additional Trip Dates Section */}
+              <div className="space-y-2 border-t pt-4">
+                <div className="flex items-center justify-between">
+                  <Label>Additional Trip Options</Label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      {dateRangeMode ? "Date Range" : "Individual Dates"}
+                    </span>
+                    <Switch
+                      checked={dateRangeMode}
+                      onCheckedChange={setDateRangeMode}
+                      data-testid="switch-trip-date-range-mode"
+                    />
+                  </div>
+                </div>
+
+                {dateRangeMode ? (
+                  <div className="space-y-3 pt-3">
+                    <p className="text-xs text-muted-foreground">
+                      Define a date range for repeat trips
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="dateRangeStart">Range Start Date</Label>
+                        <Input
+                          id="dateRangeStart"
+                          type="date"
+                          value={dateRangeStart}
+                          onChange={(e) => setDateRangeStart(e.target.value)}
+                          data-testid="input-trip-date-range-start"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="dateRangeEnd">Range End Date</Label>
+                        <Input
+                          id="dateRangeEnd"
+                          type="date"
+                          value={dateRangeEnd}
+                          onChange={(e) => setDateRangeEnd(e.target.value)}
+                          data-testid="input-trip-date-range-end"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="dateRangeStartTime">Start Time (Military)</Label>
+                        <Input
+                          id="dateRangeStartTime"
+                          type="text"
+                          pattern="\d{2}:\d{2}"
+                          placeholder="HH:mm"
+                          value={dateRangeStartTime}
+                          onChange={(e) => setDateRangeStartTime(e.target.value)}
+                          data-testid="input-trip-date-range-start-time"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="dateRangeEndTime">End Time (Military)</Label>
+                        <Input
+                          id="dateRangeEndTime"
+                          type="text"
+                          pattern="\d{2}:\d{2}"
+                          placeholder="HH:mm"
+                          value={dateRangeEndTime}
+                          onChange={(e) => setDateRangeEndTime(e.target.value)}
+                          data-testid="input-trip-date-range-end-time"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3 pt-3">
+                    <p className="text-xs text-muted-foreground">
+                      List up to 5 additional dates (with start/end times) when repeat trips occur. Leave blank to skip.
+                    </p>
+                    <div className="space-y-2">
+                      {additionalDatesToWithTimes.map((item, index) => (
+                        <div key={index} className="grid grid-cols-3 gap-2">
+                          <Input
+                            type="date"
+                            value={item.date}
+                            onChange={(e) => {
+                              const newItems = [...additionalDatesToWithTimes];
+                              newItems[index].date = e.target.value;
+                              setAdditionalDatesToWithTimes(newItems);
+                            }}
+                            placeholder={`Date ${index + 1}`}
+                            data-testid={`input-trip-additional-date-${index + 1}`}
+                          />
+                          <Input
+                            type="text"
+                            pattern="\d{2}:\d{2}"
+                            value={item.startTime}
+                            onChange={(e) => {
+                              const newItems = [...additionalDatesToWithTimes];
+                              newItems[index].startTime = e.target.value;
+                              setAdditionalDatesToWithTimes(newItems);
+                            }}
+                            placeholder="Start HH:mm"
+                            data-testid={`input-trip-additional-start-time-${index + 1}`}
+                          />
+                          <Input
+                            type="text"
+                            pattern="\d{2}:\d{2}"
+                            value={item.endTime}
+                            onChange={(e) => {
+                              const newItems = [...additionalDatesToWithTimes];
+                              newItems[index].endTime = e.target.value;
+                              setAdditionalDatesToWithTimes(newItems);
+                            }}
+                            placeholder="End HH:mm"
+                            data-testid={`input-trip-additional-end-time-${index + 1}`}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Label htmlFor="time">Start Time</Label>
                   <Input
                     id="time"
@@ -272,17 +567,6 @@ export default function AdminTrips() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="capacity">Total Capacity</Label>
-                  <Input
-                    id="capacity"
-                    name="capacity"
-                    type="number"
-                    defaultValue={editingTrip?.capacity}
-                    required
-                    data-testid="input-trip-capacity"
-                  />
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="difficultyLevel">Difficulty Level</Label>
                   <Input
                     id="difficultyLevel"
@@ -294,6 +578,43 @@ export default function AdminTrips() {
                   />
                 </div>
               </div>
+
+              <div className="flex items-center gap-2">
+                <Switch 
+                  checked={hasCapacityLimit}
+                  onCheckedChange={setHasCapacityLimit}
+                  data-testid="switch-trip-capacity-limit"
+                />
+                <Label>Has Capacity Limit</Label>
+              </div>
+              {hasCapacityLimit && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="participantCapacity">Participant Capacity</Label>
+                    <Input 
+                      id="participantCapacity" 
+                      type="number" 
+                      min="1"
+                      value={participantCapacity}
+                      onChange={(e) => setParticipantCapacity(e.target.value)}
+                      data-testid="input-trip-participant-capacity"
+                      placeholder="Enter participant capacity limit"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="volunteerCapacity">Volunteer Capacity</Label>
+                    <Input 
+                      id="volunteerCapacity" 
+                      type="number" 
+                      min="1"
+                      value={volunteerCapacity}
+                      onChange={(e) => setVolunteerCapacity(e.target.value)}
+                      data-testid="input-trip-volunteer-capacity"
+                      placeholder="Enter volunteer capacity limit"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -320,30 +641,29 @@ export default function AdminTrips() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-2">
+                <Switch 
+                  checked={hasTripCoordinatorCapacityLimit}
+                  onCheckedChange={setHasTripCoordinatorCapacityLimit}
+                  data-testid="switch-trip-coordinator-capacity-limit"
+                />
+                <Label>Has Trip Coordinator Capacity Limit</Label>
+              </div>
+
+              {hasTripCoordinatorCapacityLimit && (
                 <div className="space-y-2">
                   <Label htmlFor="tripCoordinatorCapacity">Trip Coordinator Capacity</Label>
                   <Input
                     id="tripCoordinatorCapacity"
-                    name="tripCoordinatorCapacity"
                     type="number"
-                    defaultValue={editingTrip?.tripCoordinatorCapacity}
-                    required
+                    min="1"
+                    value={tripCoordinatorCapacityValue}
+                    onChange={(e) => setTripCoordinatorCapacityValue(e.target.value)}
                     data-testid="input-trip-coordinator-capacity"
+                    placeholder="Enter capacity limit"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="volunteerCapacity">Volunteer Capacity</Label>
-                  <Input
-                    id="volunteerCapacity"
-                    name="volunteerCapacity"
-                    type="number"
-                    defaultValue={editingTrip?.volunteerCapacity}
-                    required
-                    data-testid="input-trip-volunteer-capacity"
-                  />
-                </div>
-              </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="tripCoordinatorNames">Trip Coordinator Names</Label>
@@ -376,6 +696,18 @@ export default function AdminTrips() {
                     <img src={imageUrl} alt="Trip" style={{ maxWidth: 200, marginTop: 4 }} />
                   </div>
                 )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="googleFormUrl">Google Form URL (Optional)</Label>
+                <Input 
+                  id="googleFormUrl" 
+                  name="googleFormUrl" 
+                  type="url" 
+                  placeholder="https://forms.google.com/..."
+                  defaultValue={editingTrip?.googleFormUrl || ""}
+                  data-testid="input-trip-google-form-url"
+                />
               </div>
 
               <div className="flex items-center gap-2">
@@ -444,6 +776,10 @@ export default function AdminTrips() {
                       size="sm"
                       onClick={() => {
                         setEditingTrip(trip);
+                        // Set capacity fields
+                        setHasCapacityLimit(!!(trip.capacity && trip.capacity !== 999999) || !!(trip.volunteerCapacity && trip.volunteerCapacity !== 999999));
+                        setParticipantCapacity(trip.capacity && trip.capacity !== 999999 ? trip.capacity.toString() : "15");
+                        setVolunteerCapacity(trip.volunteerCapacity && trip.volunteerCapacity !== 999999 ? trip.volunteerCapacity.toString() : "5");
                         setDialogOpen(true);
                       }}
                       data-testid={`button-edit-trip-${trip.id}`}

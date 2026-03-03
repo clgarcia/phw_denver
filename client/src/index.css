@@ -286,3 +286,12 @@
     inset: -1px;
   }
 }
+
+/* Military Time Font Styling */
+.military-time {
+  font-family: 'Courier New', 'Courier', monospace;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  font-size: 1.1em;
+  text-transform: uppercase;
+}

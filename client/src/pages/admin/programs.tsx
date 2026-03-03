@@ -47,6 +47,24 @@ export default function AdminPrograms() {
   const [deleteProgram, setDeleteProgram] = useState<Program | null>(null);
   const [imageUrl, setImageUrl] = useState("");
   const [imageUploading, setImageUploading] = useState(false);
+  const [additionalDates, setAdditionalDates] = useState<string[]>(["", "", "", "", ""]);
+  const [additionalDatesToWithTimes, setAdditionalDatesToWithTimes] = useState<Array<{date: string, startTime: string, endTime: string}>>([
+    { date: "", startTime: "", endTime: "" },
+    { date: "", startTime: "", endTime: "" },
+    { date: "", startTime: "", endTime: "" },
+    { date: "", startTime: "", endTime: "" },
+    { date: "", startTime: "", endTime: "" },
+  ]);
+  const [dateRangeMode, setDateRangeMode] = useState(false);
+  const [dateRangeStart, setDateRangeStart] = useState("");
+  const [dateRangeEnd, setDateRangeEnd] = useState("");
+  const [dateRangeStartTime, setDateRangeStartTime] = useState("");
+  const [dateRangeEndTime, setDateRangeEndTime] = useState("");
+  const [programStartTime, setProgramStartTime] = useState("");
+  const [programEndTime, setProgramEndTime] = useState("");
+  const [hasCapacityLimit, setHasCapacityLimit] = useState(true);
+  const [participantCapacity, setParticipantCapacity] = useState("30");
+  const [volunteerCapacity, setVolunteerCapacity] = useState("30");
   // Pre-fill imageUrl when editing a program
   useEffect(() => {
     if (editingProgram && editingProgram.imageUrl) {
@@ -111,6 +129,26 @@ export default function AdminPrograms() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     console.log("Submitting program with imageUrl:", imageUrl);
+    
+    let additionalDatesJson: string | undefined = undefined;
+    
+    if (dateRangeMode) {
+      // Range mode - no additional dates array needed
+      additionalDatesJson = undefined;
+    } else {
+      // Individual dates mode - filter and collect dates with start/end times
+      const filteredDates = additionalDatesToWithTimes
+        .filter(d => d.date.trim() !== "")
+        .map(d => ({
+          date: d.date,
+          startTime: d.startTime || undefined,
+          endTime: d.endTime || undefined
+        }));
+      additionalDatesJson = filteredDates.length > 0 
+        ? JSON.stringify(filteredDates)
+        : undefined;
+    }
+    
     const data: InsertProgram = {
       name: formData.get("name") as string,
       description: formData.get("description") as string,
@@ -118,9 +156,19 @@ export default function AdminPrograms() {
       endDate: formData.get("endDate") as string,
       schedule: formData.get("schedule") as string,
       // price removed
-      capacity: parseInt(formData.get("capacity") as string) || 30,
+      capacity: hasCapacityLimit && participantCapacity ? parseInt(participantCapacity) : undefined,
+      volunteerCapacity: hasCapacityLimit && volunteerCapacity ? parseInt(volunteerCapacity) : undefined,
+      startTime: programStartTime || undefined,
+      endTime: programEndTime || undefined,
       isActive: formData.get("isActive") === "on",
       imageUrl,
+      googleFormUrl: (formData.get("googleFormUrl") as string) || undefined,
+      additionalDates: additionalDatesJson,
+      dateRangeMode: dateRangeMode || undefined,
+      dateRangeStart: dateRangeMode ? dateRangeStart : undefined,
+      dateRangeEnd: dateRangeMode ? dateRangeEnd : undefined,
+      dateRangeStartTime: dateRangeMode ? dateRangeStartTime : undefined,
+      dateRangeEndTime: dateRangeMode ? dateRangeEndTime : undefined,
     };
     console.log("Program form data to submit:", data);
     if (editingProgram) {
@@ -132,12 +180,79 @@ export default function AdminPrograms() {
 
   const openEditDialog = (program: Program) => {
     setEditingProgram(program);
+    
+    // Set program start/end times
+    setProgramStartTime(program.startTime || "");
+    setProgramEndTime(program.endTime || "");
+    
+    // Set capacity fields
+    setHasCapacityLimit(!!(program.capacity || program.volunteerCapacity));
+    setParticipantCapacity(program.capacity?.toString() || "30");
+    setVolunteerCapacity(program.volunteerCapacity?.toString() || "30");
+    
+    // Set date range mode
+    setDateRangeMode(program.dateRangeMode || false);
+    setDateRangeStart(program.dateRangeStart || "");
+    setDateRangeEnd(program.dateRangeEnd || "");
+    setDateRangeStartTime(program.dateRangeStartTime || "");
+    setDateRangeEndTime(program.dateRangeEndTime || "");
+    
+    // Parse additional dates if they exist
+    if (program.additionalDates) {
+      try {
+        const parsed = JSON.parse(program.additionalDates);
+        // Handle multiple formats: old (date strings), v1 ({date, time}), new ({date, startTime, endTime})
+        const datesWithTimes = parsed.map((item: any) => {
+          if (typeof item === 'string') {
+            return { date: item, startTime: "", endTime: "" };
+          }
+          // Handle both old format with 'time' and new format with 'startTime/endTime'
+          return {
+            date: item.date || "",
+            startTime: item.startTime || item.time || "",
+            endTime: item.endTime || ""
+          };
+        });
+        // Pad with empty slots to always have 5
+        while (datesWithTimes.length < 5) {
+          datesWithTimes.push({ date: "", startTime: "", endTime: "" });
+        }
+        setAdditionalDatesToWithTimes(datesWithTimes);
+      } catch {
+        setAdditionalDatesToWithTimes([
+          { date: "", startTime: "", endTime: "" },
+          { date: "", startTime: "", endTime: "" },
+          { date: "", startTime: "", endTime: "" },
+          { date: "", startTime: "", endTime: "" },
+          { date: "", startTime: "", endTime: "" },
+        ]);
+      }
+    }
+    
     setDialogOpen(true);
   };
 
   const closeDialog = () => {
     setDialogOpen(false);
     setEditingProgram(null);
+    setAdditionalDates(["", "", "", "", ""]);
+    setAdditionalDatesToWithTimes([
+      { date: "", startTime: "", endTime: "" },
+      { date: "", startTime: "", endTime: "" },
+      { date: "", startTime: "", endTime: "" },
+      { date: "", startTime: "", endTime: "" },
+      { date: "", startTime: "", endTime: "" },
+    ]);
+    setDateRangeMode(false);
+    setHasCapacityLimit(true);
+    setParticipantCapacity("30");
+    setVolunteerCapacity("30");
+    setDateRangeStart("");
+    setDateRangeEnd("");
+    setDateRangeStartTime("");
+    setDateRangeEndTime("");
+    setProgramStartTime("");
+    setProgramEndTime("");
   };
 
   return (
@@ -223,6 +338,124 @@ export default function AdminPrograms() {
                   />
                 </div>
               </div>
+
+              {/* Additional Session Dates Section */}
+              <div className="space-y-2 border-t pt-4">
+                <div className="flex items-center justify-between">
+                  <Label>Additional Program Options</Label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      {dateRangeMode ? "Date Range" : "Individual Dates"}
+                    </span>
+                    <Switch
+                      checked={dateRangeMode}
+                      onCheckedChange={setDateRangeMode}
+                      data-testid="switch-program-date-range-mode"
+                    />
+                  </div>
+                </div>
+
+                {dateRangeMode ? (
+                  <div className="space-y-3 pt-3">
+                    <p className="text-xs text-muted-foreground">
+                      Define a date range for this program
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="dateRangeStart">Range Start Date</Label>
+                        <Input
+                          id="dateRangeStart"
+                          type="date"
+                          value={dateRangeStart}
+                          onChange={(e) => setDateRangeStart(e.target.value)}
+                          data-testid="input-program-date-range-start"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="dateRangeEnd">Range End Date</Label>
+                        <Input
+                          id="dateRangeEnd"
+                          type="date"
+                          value={dateRangeEnd}
+                          onChange={(e) => setDateRangeEnd(e.target.value)}
+                          data-testid="input-program-date-range-end"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="dateRangeStartTime">Start Time (Military)</Label>
+                        <Input
+                          id="dateRangeStartTime"
+                          type="text"
+                          pattern="\d{2}:\d{2}"
+                          placeholder="HH:mm"
+                          value={dateRangeStartTime}
+                          onChange={(e) => setDateRangeStartTime(e.target.value)}
+                          data-testid="input-program-date-range-start-time"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="dateRangeEndTime">End Time (Military)</Label>
+                        <Input
+                          id="dateRangeEndTime"
+                          type="text"
+                          pattern="\d{2}:\d{2}"
+                          placeholder="HH:mm"
+                          value={dateRangeEndTime}
+                          onChange={(e) => setDateRangeEndTime(e.target.value)}
+                          data-testid="input-program-date-range-end-time"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3 pt-3">
+                    <p className="text-xs text-muted-foreground">
+                      Optionally list up to 5 specific meeting dates with start and end times (military format). Leave blank to skip.
+                    </p>
+                    <div className="space-y-2">
+                      {additionalDatesToWithTimes.map((item, index) => (
+                        <div key={index} className="grid grid-cols-3 gap-2">
+                          <Input
+                            type="date"
+                            value={item.date}
+                            onChange={(e) => {
+                              const newItems = [...additionalDatesToWithTimes];
+                              newItems[index].date = e.target.value;
+                              setAdditionalDatesToWithTimes(newItems);
+                            }}
+                            placeholder={`Date ${index + 1}`}
+                            data-testid={`input-program-additional-date-${index + 1}`}
+                          />
+                          <Input
+                            type="text"
+                            pattern="\d{2}:\d{2}"
+                            value={item.startTime}
+                            onChange={(e) => {
+                              const newItems = [...additionalDatesToWithTimes];
+                              newItems[index].startTime = e.target.value;
+                              setAdditionalDatesToWithTimes(newItems);
+                            }}
+                            placeholder="Start HH:mm"
+                            data-testid={`input-program-additional-start-time-${index + 1}`}
+                          />
+                          <Input
+                            type="text"
+                            pattern="\d{2}:\d{2}"
+                            value={item.endTime}
+                            onChange={(e) => {
+                              const newItems = [...additionalDatesToWithTimes];
+                              newItems[index].endTime = e.target.value;
+                              setAdditionalDatesToWithTimes(newItems);
+                            }}
+                            placeholder="End HH:mm"
+                            data-testid={`input-program-additional-end-time-${index + 1}`}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="schedule">Schedule</Label>
                 <Input 
@@ -234,16 +467,77 @@ export default function AdminPrograms() {
                   data-testid="input-program-schedule"
                 />
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="programStartTime">Start Time (Military)</Label>
+                  <Input
+                    id="programStartTime"
+                    type="text"
+                    pattern="\d{2}:\d{2}"
+                    placeholder="HH:mm (e.g., 14:30)"
+                    value={programStartTime}
+                    onChange={(e) => setProgramStartTime(e.target.value)}
+                    data-testid="input-program-start-time"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="programEndTime">End Time (Military)</Label>
+                  <Input
+                    id="programEndTime"
+                    type="text"
+                    pattern="\d{2}:\d{2}"
+                    placeholder="HH:mm (e.g., 16:00)"
+                    value={programEndTime}
+                    onChange={(e) => setProgramEndTime(e.target.value)}
+                    data-testid="input-program-end-time"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch 
+                  checked={hasCapacityLimit}
+                  onCheckedChange={setHasCapacityLimit}
+                  data-testid="switch-program-capacity-limit"
+                />
+                <Label>Has Capacity Limit</Label>
+              </div>
+              {hasCapacityLimit && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="participantCapacity">Participant Capacity</Label>
+                    <Input 
+                      id="participantCapacity" 
+                      type="number" 
+                      min="1"
+                      value={participantCapacity}
+                      onChange={(e) => setParticipantCapacity(e.target.value)}
+                      data-testid="input-program-participant-capacity"
+                      placeholder="Enter participant capacity"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="volunteerCapacity">Volunteer Capacity</Label>
+                    <Input 
+                      id="volunteerCapacity" 
+                      type="number" 
+                      min="1"
+                      value={volunteerCapacity}
+                      onChange={(e) => setVolunteerCapacity(e.target.value)}
+                      data-testid="input-program-volunteer-capacity"
+                      placeholder="Enter volunteer capacity"
+                    />
+                  </div>
+                </div>
+              )}
               <div className="space-y-2">
-                <Label htmlFor="capacity">Capacity</Label>
+                <Label htmlFor="googleFormUrl">Google Form URL (Optional)</Label>
                 <Input 
-                  id="capacity" 
-                  name="capacity" 
-                  type="number" 
-                  min="1" 
-                  required 
-                  defaultValue={editingProgram?.capacity || 30}
-                  data-testid="input-program-capacity"
+                  id="googleFormUrl" 
+                  name="googleFormUrl" 
+                  type="url" 
+                  placeholder="https://forms.google.com/..."
+                  defaultValue={editingProgram?.googleFormUrl || ""}
+                  data-testid="input-program-google-form-url"
                 />
               </div>
               <div className="flex items-center gap-2">
