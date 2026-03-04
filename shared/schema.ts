@@ -29,12 +29,12 @@ export const events = pgTable("events", {
   googleFormUrl: text("google_form_url"),
   isActive: boolean("is_active").notNull().default(true),
   requiresRegistration: boolean("requires_registration").notNull().default(true),
-  additionalDates: text("additional_dates"), // JSON array of {date, startTime, endTime} objects for individual dates
-  dateRangeMode: boolean("date_range_mode"), // true for range, false/null for individual dates
-  dateRangeStart: text("date_range_start"), // For range mode: start date
-  dateRangeEnd: text("date_range_end"), // For range mode: end date
-  dateRangeStartTime: text("date_range_start_time"), // For range mode: start time
-  dateRangeEndTime: text("date_range_end_time"), // For range mode: end time
+  additionalDates: text("additional_dates"),
+  dateRangeMode: boolean("date_range_mode"),
+  dateRangeStart: text("date_range_start"),
+  dateRangeEnd: text("date_range_end"),
+  dateRangeStartTime: text("date_range_start_time"),
+  dateRangeEndTime: text("date_range_end_time"),
 });
 
 export const programs = pgTable("programs", {
@@ -118,6 +118,7 @@ export const insertEventSchema = createInsertSchema(events).omit({
   registeredCount: true,
 }).extend({
   date: z.string().optional(),
+  time: z.string().optional(),
 });
 
 export const insertProgramSchema = createInsertSchema(programs).omit({
