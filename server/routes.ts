@@ -194,7 +194,7 @@ export async function registerRoutes(
         if (!trip) {
           return res.status(400).json({ message: "Trip not found" });
         }
-        if (trip.registeredCount >= trip.capacity) {
+        if (trip.capacity && trip.registeredCount >= trip.capacity) {
           return res.status(400).json({ message: "Trip is full" });
         }
       }
@@ -241,14 +241,14 @@ export async function registerRoutes(
         recipientName: `${registration.firstName} ${registration.lastName}`,
         participationType: registration.participationType || "participant",
         eventTitle: event?.title,
-        eventDate: event?.date,
+        eventDate: event?.date ?? undefined,
         eventTime: event?.time ?? undefined,
         eventLocation: event?.location,
         programName: program?.name,
-        programStartDate: program?.startDate,
+        programStartDate: program?.startDate ?? undefined,
         tripName: trip?.name,
-        tripDate: trip?.date,
-        tripEndDate: trip?.endDate,
+        tripDate: trip?.date ?? undefined,
+        tripEndDate: trip?.endDate ?? undefined,
         tripTime: trip?.time ?? undefined,
         tripEndTime: trip?.endTime ?? undefined,
         tripMeetupLocation: trip?.meetupLocation,

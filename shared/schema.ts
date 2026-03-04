@@ -17,7 +17,7 @@ export const events = pgTable("events", {
   id: varchar("id", { length: 36 }).primaryKey(),
   title: text("title").notNull(),
   description: text("description").notNull(),
-  date: text("date").notNull(),
+  date: text("date"),
   time: text("time"),
   startTime: text("start_time"),
   endTime: text("end_time"),
@@ -41,8 +41,8 @@ export const programs = pgTable("programs", {
   id: varchar("id", { length: 36 }).primaryKey(),
   name: text("name").notNull(),
   description: text("description").notNull(),
-  startDate: text("start_date").notNull(),
-  endDate: text("end_date").notNull(),
+  startDate: text("start_date"),
+  endDate: text("end_date"),
   schedule: text("schedule").notNull(),
   // price removed
   capacity: integer("capacity"),
@@ -81,21 +81,21 @@ export const trips = pgTable("trips", {
   id: varchar("id", { length: 36 }).primaryKey(),
   name: text("name").notNull(),
   description: text("description").notNull(),
-  date: text("date").notNull(),
-  endDate: text("end_date").notNull(),
+  date: text("date"),
+  endDate: text("end_date"),
   time: text("time"),
   startTime: text("start_time"),
   endTime: text("end_time"),
   meetupLocation: text("meetup_location").notNull(),
   destination: text("destination").notNull(),
-  capacity: integer("capacity").notNull(),
+  capacity: integer("capacity"),
   registeredCount: integer("registered_count").notNull().default(0),
   durationDays: integer("duration_days").notNull(),
   durationNights: integer("duration_nights").notNull(),
   difficultyLevel: text("difficulty_level").notNull(), // e.g., "Beginner", "Intermediate", "Advanced"
-  tripCoordinatorCapacity: integer("trip_coordinator_capacity").notNull(),
+  tripCoordinatorCapacity: integer("trip_coordinator_capacity"),
   tripCoordinatorNames: text("trip_coordinator_names"), // JSON string or comma-separated
-  volunteerCapacity: integer("volunteer_capacity").notNull(),
+  volunteerCapacity: integer("volunteer_capacity"),
   volunteerNames: text("volunteer_names"), // JSON string or comma-separated
   imageUrl: text("image_url"),
   googleFormUrl: text("google_form_url"),
@@ -116,11 +116,16 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export const insertEventSchema = createInsertSchema(events).omit({
   id: true,
   registeredCount: true,
+}).extend({
+  date: z.string().optional(),
 });
 
 export const insertProgramSchema = createInsertSchema(programs).omit({
   id: true,
   registeredCount: true,
+}).extend({
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
 });
 
 export const insertRegistrationSchema = createInsertSchema(registrations).omit({
@@ -132,6 +137,12 @@ export const insertRegistrationSchema = createInsertSchema(registrations).omit({
 export const insertTripSchema = createInsertSchema(trips).omit({
   id: true,
   registeredCount: true,
+}).extend({
+  date: z.string().optional(),
+  endDate: z.string().optional(),
+  capacity: z.number().optional(),
+  tripCoordinatorCapacity: z.number().optional(),
+  volunteerCapacity: z.number().optional(),
 });
 
 // Participant Registration Table
