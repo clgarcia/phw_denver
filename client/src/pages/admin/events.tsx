@@ -131,6 +131,22 @@ export default function AdminEvents() {
     console.log("Submitting event with imageUrl:", imageUrl);
     const formData = new FormData(e.currentTarget);
     
+    const mainDate = formData.get("date") as string;
+    
+    // Validate that at least one date option is provided
+    const hasMainDate = mainDate && mainDate.trim() !== "";
+    const hasAdditionalDates = additionalDatesToWithTimes.some(d => d.date && d.date.trim() !== "");
+    const hasDateRange = dateRangeMode && dateRangeStart && dateRangeEnd;
+    
+    if (!hasMainDate && !hasAdditionalDates && !hasDateRange) {
+      toast({ 
+        title: "Missing date information", 
+        description: "Please enter at least one date using either the main date field, additional dates, or a date range.",
+        variant: "destructive" 
+      });
+      return;
+    }
+    
     let additionalDatesJson: string | undefined = undefined;
     
     if (dateRangeMode) {
@@ -153,10 +169,10 @@ export default function AdminEvents() {
     const data: InsertEvent = {
       title: formData.get("title") as string,
       description: formData.get("description") as string,
-      date: formData.get("date") as string,
+      date: mainDate || undefined,
       time: undefined,
-      startTime: eventStartTime || undefined,
-      endTime: eventEndTime || undefined,
+      startTime: eventStartTime && eventStartTime.trim() ? eventStartTime : undefined,
+      endTime: eventEndTime && eventEndTime.trim() ? eventEndTime : undefined,
       location: formData.get("location") as string,
       capacity: hasCapacityLimit && participantCapacity ? parseInt(participantCapacity) : undefined,
       volunteerCapacity: hasCapacityLimit && volunteerCapacity ? parseInt(volunteerCapacity) : undefined,
@@ -166,10 +182,10 @@ export default function AdminEvents() {
       googleFormUrl: (formData.get("googleFormUrl") as string) || undefined,
       additionalDates: additionalDatesJson,
       dateRangeMode: dateRangeMode || undefined,
-      dateRangeStart: dateRangeMode ? dateRangeStart : undefined,
-      dateRangeEnd: dateRangeMode ? dateRangeEnd : undefined,
-      dateRangeStartTime: dateRangeMode ? dateRangeStartTime : undefined,
-      dateRangeEndTime: dateRangeMode ? dateRangeEndTime : undefined,
+      dateRangeStart: dateRangeMode && dateRangeStart ? dateRangeStart : undefined,
+      dateRangeEnd: dateRangeMode && dateRangeEnd ? dateRangeEnd : undefined,
+      dateRangeStartTime: dateRangeMode && dateRangeStartTime && dateRangeStartTime.trim() ? dateRangeStartTime : undefined,
+      dateRangeEndTime: dateRangeMode && dateRangeEndTime && dateRangeEndTime.trim() ? dateRangeEndTime : undefined,
     };
 
     console.log("Event form data to submit:", data);
@@ -304,12 +320,11 @@ export default function AdminEvents() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="date">Date</Label>
+                  <Label htmlFor="date">Date (optional - use if single date event)</Label>
                   <Input 
                     id="date" 
                     name="date" 
                     type="date" 
-                    required 
                     defaultValue={editingEvent?.date}
                     data-testid="input-event-date"
                   />

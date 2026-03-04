@@ -131,6 +131,23 @@ export default function AdminPrograms() {
     const formData = new FormData(e.currentTarget);
     console.log("Submitting program with imageUrl:", imageUrl);
     
+    const startDate = formData.get("startDate") as string;
+    const endDate = formData.get("endDate") as string;
+    
+    // Validate that at least one date option is provided
+    const hasMainDates = startDate && startDate.trim() !== "" && endDate && endDate.trim() !== "";
+    const hasAdditionalDates = additionalDatesToWithTimes.some(d => d.date && d.date.trim() !== "");
+    const hasDateRange = dateRangeMode && dateRangeStart && dateRangeEnd;
+    
+    if (!hasMainDates && !hasAdditionalDates && !hasDateRange) {
+      toast({ 
+        title: "Missing date information", 
+        description: "Please enter at least one date using either the main start/end dates, additional dates, or a date range.",
+        variant: "destructive" 
+      });
+      return;
+    }
+    
     let additionalDatesJson: string | undefined = undefined;
     
     if (dateRangeMode) {
@@ -153,23 +170,23 @@ export default function AdminPrograms() {
     const data: InsertProgram = {
       name: formData.get("name") as string,
       description: formData.get("description") as string,
-      startDate: formData.get("startDate") as string,
-      endDate: formData.get("endDate") as string,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
       schedule: formData.get("schedule") as string,
       // price removed
       capacity: hasCapacityLimit && participantCapacity ? parseInt(participantCapacity) : undefined,
       volunteerCapacity: hasCapacityLimit && volunteerCapacity ? parseInt(volunteerCapacity) : undefined,
-      startTime: programStartTime || undefined,
-      endTime: programEndTime || undefined,
+      startTime: programStartTime && programStartTime.trim() ? programStartTime : undefined,
+      endTime: programEndTime && programEndTime.trim() ? programEndTime : undefined,
       isActive: formData.get("isActive") === "on",
       imageUrl,
       googleFormUrl: (formData.get("googleFormUrl") as string) || undefined,
       additionalDates: additionalDatesJson,
       dateRangeMode: dateRangeMode || undefined,
-      dateRangeStart: dateRangeMode ? dateRangeStart : undefined,
-      dateRangeEnd: dateRangeMode ? dateRangeEnd : undefined,
-      dateRangeStartTime: dateRangeMode ? dateRangeStartTime : undefined,
-      dateRangeEndTime: dateRangeMode ? dateRangeEndTime : undefined,
+      dateRangeStart: dateRangeMode && dateRangeStart ? dateRangeStart : undefined,
+      dateRangeEnd: dateRangeMode && dateRangeEnd ? dateRangeEnd : undefined,
+      dateRangeStartTime: dateRangeMode && dateRangeStartTime && dateRangeStartTime.trim() ? dateRangeStartTime : undefined,
+      dateRangeEndTime: dateRangeMode && dateRangeEndTime && dateRangeEndTime.trim() ? dateRangeEndTime : undefined,
     };
     console.log("Program form data to submit:", data);
     if (editingProgram) {
@@ -317,23 +334,21 @@ export default function AdminPrograms() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="startDate">Start Date</Label>
+                  <Label htmlFor="startDate">Start Date (optional - use if single date range)</Label>
                   <Input 
                     id="startDate" 
                     name="startDate" 
                     type="date" 
-                    required 
                     defaultValue={editingProgram?.startDate}
                     data-testid="input-program-start-date"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="endDate">End Date</Label>
+                  <Label htmlFor="endDate">End Date (optional - use if single date range)</Label>
                   <Input 
                     id="endDate" 
                     name="endDate" 
                     type="date" 
-                    required 
                     defaultValue={editingProgram?.endDate}
                     data-testid="input-program-end-date"
                   />

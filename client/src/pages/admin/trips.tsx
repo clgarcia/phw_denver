@@ -220,6 +220,23 @@ export default function AdminTrips() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
+    const date = formData.get("date") as string;
+    const endDate = formData.get("endDate") as string;
+    
+    // Validate that at least one date option is provided
+    const hasMainDates = date && date.trim() !== "" && endDate && endDate.trim() !== "";
+    const hasAdditionalDates = additionalDatesToWithTimes.some(d => d.date && d.date.trim() !== "");
+    const hasDateRange = dateRangeMode && dateRangeStart && dateRangeEnd;
+    
+    if (!hasMainDates && !hasAdditionalDates && !hasDateRange) {
+      toast({ 
+        title: "Missing date information", 
+        description: "Please enter at least one date using either the main start/end dates, additional dates, or a date range.",
+        variant: "destructive" 
+      });
+      return;
+    }
+    
     let additionalDatesJson: string | undefined = undefined;
     
     if (dateRangeMode) {
@@ -242,11 +259,11 @@ export default function AdminTrips() {
     const tripData: InsertTrip = {
       name: formData.get("name") as string,
       description: formData.get("description") as string,
-      date: formData.get("date") as string,
-      endDate: formData.get("endDate") as string,
+      date: date || undefined,
+      endDate: endDate || undefined,
       time: undefined,
-      startTime: tripStartTime || undefined,
-      endTime: tripEndTime || undefined,
+      startTime: tripStartTime && tripStartTime.trim() ? tripStartTime : undefined,
+      endTime: tripEndTime && tripEndTime.trim() ? tripEndTime : undefined,
       meetupLocation: formData.get("meetupLocation") as string,
       destination: formData.get("destination") as string,
       capacity: hasCapacityLimit && participantCapacity ? parseInt(participantCapacity) : 999999,
@@ -262,10 +279,10 @@ export default function AdminTrips() {
       googleFormUrl: (formData.get("googleFormUrl") as string) || undefined,
       additionalDates: additionalDatesJson,
       dateRangeMode: dateRangeMode || undefined,
-      dateRangeStart: dateRangeMode ? dateRangeStart : undefined,
-      dateRangeEnd: dateRangeMode ? dateRangeEnd : undefined,
-      dateRangeStartTime: dateRangeMode ? dateRangeStartTime : undefined,
-      dateRangeEndTime: dateRangeMode ? dateRangeEndTime : undefined,
+      dateRangeStart: dateRangeMode && dateRangeStart ? dateRangeStart : undefined,
+      dateRangeEnd: dateRangeMode && dateRangeEnd ? dateRangeEnd : undefined,
+      dateRangeStartTime: dateRangeMode && dateRangeStartTime && dateRangeStartTime.trim() ? dateRangeStartTime : undefined,
+      dateRangeEndTime: dateRangeMode && dateRangeEndTime && dateRangeEndTime.trim() ? dateRangeEndTime : undefined,
     };
 
     if (editingTrip) {
@@ -351,24 +368,22 @@ export default function AdminTrips() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="date">Start Date</Label>
+                  <Label htmlFor="date">Start Date (optional - use if single date range)</Label>
                   <Input
                     id="date"
                     name="date"
                     type="date"
                     defaultValue={editingTrip?.date}
-                    required
                     data-testid="input-trip-date"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="endDate">End Date</Label>
+                  <Label htmlFor="endDate">End Date (optional - use if single date range)</Label>
                   <Input
                     id="endDate"
                     name="endDate"
                     type="date"
                     defaultValue={editingTrip?.endDate}
-                    required
                     data-testid="input-trip-end-date"
                   />
                 </div>

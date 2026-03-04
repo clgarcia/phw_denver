@@ -48,7 +48,8 @@ export async function registerRoutes(
       const event = await storage.createEvent(parsed.data);
       res.status(201).json(event);
     } catch (error) {
-      res.status(500).json({ message: "Failed to create event" });
+      console.error("Failed to create event:", error);
+      res.status(500).json({ message: "Failed to create event", error: String(error) });
     }
   });
 
@@ -110,7 +111,8 @@ export async function registerRoutes(
       const program = await storage.createProgram(parsed.data);
       res.status(201).json(program);
     } catch (error) {
-      res.status(500).json({ message: "Failed to create program" });
+      console.error("Failed to create program:", error);
+      res.status(500).json({ message: "Failed to create program", error: String(error) });
     }
   });
 
@@ -336,7 +338,8 @@ export async function registerRoutes(
       const trip = await storage.createTrip(parsed.data);
       res.status(201).json(trip);
     } catch (error) {
-      res.status(500).json({ message: "Failed to create trip" });
+      console.error("Failed to create trip:", error);
+      res.status(500).json({ message: "Failed to create trip", error: String(error) });
     }
   });
 
