@@ -79,7 +79,11 @@ export default function AdminPrograms() {
     queryKey: ["/api/programs"],
   });
 
-  const sortedPrograms = [...programs].sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+  const sortedPrograms = [...programs].sort((a, b) => {
+    const dateA = a.startDate ? new Date(a.startDate).getTime() : Infinity;
+    const dateB = b.startDate ? new Date(b.startDate).getTime() : Infinity;
+    return dateA - dateB;
+  });
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertProgram) => {
@@ -611,7 +615,7 @@ export default function AdminPrograms() {
                     {program.isActive ? "Active" : "Inactive"}
                   </Badge>
                 </div>
-                <CardDescription>{formatDate(program.startDate)}</CardDescription>
+                <CardDescription>{program.startDate ? formatDate(program.startDate) : 'Multiple dates'}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground line-clamp-2">{program.description}</p>

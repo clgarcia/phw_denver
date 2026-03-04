@@ -79,7 +79,11 @@ export default function AdminEvents() {
     queryKey: ["/api/events"],
   });
 
-  const sortedEvents = [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const sortedEvents = [...events].sort((a, b) => {
+    const dateA = a.date ? new Date(a.date).getTime() : Infinity;
+    const dateB = b.date ? new Date(b.date).getTime() : Infinity;
+    return dateA - dateB;
+  });
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertEvent) => {
@@ -603,7 +607,7 @@ export default function AdminEvents() {
                     {event.isActive ? "Active" : "Inactive"}
                   </Badge>
                 </div>
-                <CardDescription>{formatDate(event.date)} at <span className="military-time">{event.time}</span></CardDescription>
+                <CardDescription>{event.date ? `${formatDate(event.date)}${event.time ? ` at ${event.time}` : ''}` : 'Multiple dates'}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>

@@ -132,7 +132,11 @@ export default function AdminTrips() {
     queryKey: ["/api/trips"],
   });
 
-  const sortedTrips = [...trips].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const sortedTrips = [...trips].sort((a, b) => {
+    const dateA = a.date ? new Date(a.date).getTime() : Infinity;
+    const dateB = b.date ? new Date(b.date).getTime() : Infinity;
+    return dateA - dateB;
+  });
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertTrip) => {
@@ -783,7 +787,7 @@ export default function AdminTrips() {
                       </Badge>
                     </CardTitle>
                     <CardDescription className="mt-1">
-                      {trip.destination} • {formatDate(trip.date)} - {formatDate(trip.endDate)}
+                      {trip.destination} • {trip.date ? `${formatDate(trip.date)}${trip.endDate ? ` - ${formatDate(trip.endDate)}` : ''}` : 'Multiple dates'}
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
