@@ -66,6 +66,7 @@ export default function AdminPrograms() {
   const [hasCapacityLimit, setHasCapacityLimit] = useState(true);
   const [participantCapacity, setParticipantCapacity] = useState("30");
   const [volunteerCapacity, setVolunteerCapacity] = useState("30");
+  const [isFull, setIsFull] = useState(false);
   // Pre-fill imageUrl when editing a program
   useEffect(() => {
     if (editingProgram && editingProgram.imageUrl) {
@@ -183,6 +184,7 @@ export default function AdminPrograms() {
       startTime: programStartTime && programStartTime.trim() ? programStartTime : undefined,
       endTime: programEndTime && programEndTime.trim() ? programEndTime : undefined,
       isActive: formData.get("isActive") === "on",
+      isFull: isFull,
       imageUrl,
       googleFormUrl: (formData.get("googleFormUrl") as string) || undefined,
       additionalDates: additionalDatesJson,
@@ -211,6 +213,7 @@ export default function AdminPrograms() {
     setHasCapacityLimit(!!(program.capacity || program.volunteerCapacity));
     setParticipantCapacity(program.capacity?.toString() || "30");
     setVolunteerCapacity(program.volunteerCapacity?.toString() || "30");
+    setIsFull(program.isFull ?? false);
     
     // Set date range mode
     setDateRangeMode(program.dateRangeMode || false);
@@ -269,6 +272,7 @@ export default function AdminPrograms() {
     setHasCapacityLimit(true);
     setParticipantCapacity("30");
     setVolunteerCapacity("30");
+    setIsFull(false);
     setDateRangeStart("");
     setDateRangeEnd("");
     setDateRangeStartTime("");
@@ -568,6 +572,15 @@ export default function AdminPrograms() {
                   data-testid="switch-program-active"
                 />
                 <Label htmlFor="isActive">Active (visible to public)</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch 
+                  id="isFull" 
+                  checked={isFull}
+                  onCheckedChange={setIsFull}
+                  data-testid="switch-program-is-full"
+                />
+                <Label htmlFor="isFull">Mark as Full (hides registration button)</Label>
               </div>
               <div className="flex gap-2 justify-end pt-4">
                 <Button type="button" variant="outline" onClick={closeDialog}>

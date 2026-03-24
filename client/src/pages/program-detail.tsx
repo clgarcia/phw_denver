@@ -23,6 +23,10 @@ export default function ProgramDetail() {
     queryKey: ["/api/programs", id],
   });
 
+  const spotsLeft = program ? (program.isFull ? 0 : program.capacity - program.registeredCount) : 0;
+  const registeredDisplay = program ? (program.isFull ? program.capacity : program.registeredCount) : 0;
+  const fillPercentage = program ? (program.isFull ? 100 : (program.registeredCount / program.capacity) * 100) : 0;
+
   const handleRegisterClick = () => {
     if (program?.googleFormUrl) {
       setUrlToOpen(program.googleFormUrl);
@@ -203,22 +207,22 @@ export default function ProgramDetail() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Capacity</span>
-                        <span className="font-medium">{program.registeredCount} / {program.capacity}</span>
+                        <span className="font-medium">{registeredDisplay} / {program.capacity}</span>
                       </div>
                       <div className="h-2 rounded bg-muted overflow-hidden">
-                        <div className="h-2 rounded bg-primary" style={{ width: `${(program.registeredCount / program.capacity) * 100}%` }} />
+                        <div className="h-2 rounded bg-primary" style={{ width: `${fillPercentage}%` }} />
                       </div>
                     </div>
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
                       <Users className="h-5 w-5 text-primary" />
                       <div>
-                        <p className="font-medium text-primary">{program.capacity - program.registeredCount} spots remaining</p>
+                        <p className="font-medium text-primary">{spotsLeft} spots remaining</p>
                         <p className="text-sm text-muted-foreground">
-                          {(program.registeredCount / program.capacity) * 100 > 80 ? "Filling up fast!" : "Spots available"}
+                          {fillPercentage > 80 ? "Filling up fast!" : "Spots available"}
                         </p>
                       </div>
                     </div>
-                    {program.capacity - program.registeredCount > 0 ? (
+                    {program.capacity - program.registeredCount > 0 && !program.isFull ? (
                       <Button 
                         className="w-full" 
                         size="lg" 

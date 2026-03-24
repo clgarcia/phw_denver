@@ -108,6 +108,7 @@ export default function AdminEvents() {
   const [participantCapacity, setParticipantCapacity] = useState("");
   const [volunteerCapacity, setVolunteerCapacity] = useState("");
   const [requiresRegistration, setRequiresRegistration] = useState(false);
+  const [isFull, setIsFull] = useState(false);
 
   const { data: events = [], isLoading } = useQuery<Event[]>({
     queryKey: ["/api/events"],
@@ -207,6 +208,7 @@ export default function AdminEvents() {
       volunteerCapacity: (hasCapacityLimit || requiresRegistration) && volunteerCapacity ? parseInt(volunteerCapacity) : undefined,
       isActive: formData.get("isActive") === "on",
       requiresRegistration: requiresRegistration,
+      isFull: isFull,
       imageUrl,
       googleFormUrl: (formData.get("googleFormUrl") as string) || undefined,
       date: undefined,
@@ -283,6 +285,7 @@ export default function AdminEvents() {
     setParticipantCapacity(event.capacity?.toString() || "");
     setVolunteerCapacity(event.volunteerCapacity?.toString() || "");
     setRequiresRegistration(event.requiresRegistration ?? false);
+    setIsFull(event.isFull ?? false);
     
     // Determine which mode this event uses and load data accordingly
     if (event.dateRangeMode) {
@@ -362,6 +365,7 @@ export default function AdminEvents() {
     setParticipantCapacity("");
     setVolunteerCapacity("");
     setRequiresRegistration(false);
+    setIsFull(false);
   };
 
   return (
@@ -674,6 +678,15 @@ export default function AdminEvents() {
                   data-testid="switch-event-requires-registration"
                 />
                 <Label htmlFor="requiresRegistration">Requires Registration</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch 
+                  id="isFull" 
+                  checked={isFull}
+                  onCheckedChange={setIsFull}
+                  data-testid="switch-event-is-full"
+                />
+                <Label htmlFor="isFull">Mark as Full (hides registration button)</Label>
               </div>
               <div className="space-y-2">
                 <Label>Event Image</Label>

@@ -68,6 +68,7 @@ export default function AdminTrips() {
   const [volunteerCapacity, setVolunteerCapacity] = useState("5");
   const [hasTripCoordinatorCapacityLimit, setHasTripCoordinatorCapacityLimit] = useState(true);
   const [tripCoordinatorCapacityValue, setTripCoordinatorCapacityValue] = useState("2");
+  const [isFull, setIsFull] = useState(false);
 
   useEffect(() => {
     if (editingTrip && editingTrip.imageUrl) {
@@ -166,6 +167,7 @@ export default function AdminTrips() {
       setVolunteerCapacity("5");
       setHasTripCoordinatorCapacityLimit(true);
       setTripCoordinatorCapacityValue("2");
+      setIsFull(false);
     },
     onError: (error: Error) => {
       toast({ title: "Failed to create trip", description: error.message, variant: "destructive" });
@@ -200,6 +202,7 @@ export default function AdminTrips() {
       setVolunteerCapacity("5");
       setHasTripCoordinatorCapacityLimit(true);
       setTripCoordinatorCapacityValue("2");
+      setIsFull(false);
     },
     onError: (error: Error) => {
       toast({ title: "Failed to update trip", description: error.message, variant: "destructive" });
@@ -279,6 +282,7 @@ export default function AdminTrips() {
       volunteerCapacity: hasCapacityLimit && volunteerCapacity ? parseInt(volunteerCapacity) : 999999,
       volunteerNames: (formData.get("volunteerNames") as string) || null,
       isActive: formData.get("isActive") === "on",
+      isFull: isFull,
       imageUrl,
       googleFormUrl: (formData.get("googleFormUrl") as string) || undefined,
       additionalDates: additionalDatesJson,
@@ -740,6 +744,16 @@ export default function AdminTrips() {
                 <Label htmlFor="isActive">Active</Label>
               </div>
 
+              <div className="flex items-center gap-2">
+                <Switch 
+                  id="isFull" 
+                  checked={isFull}
+                  onCheckedChange={setIsFull}
+                  data-testid="switch-trip-is-full"
+                />
+                <Label htmlFor="isFull">Mark as Full (hides registration button)</Label>
+              </div>
+
               <Button 
                 type="submit" 
                 className="w-full"
@@ -800,6 +814,7 @@ export default function AdminTrips() {
                         setHasCapacityLimit(!!(trip.capacity && trip.capacity !== 999999) || !!(trip.volunteerCapacity && trip.volunteerCapacity !== 999999));
                         setParticipantCapacity(trip.capacity && trip.capacity !== 999999 ? trip.capacity.toString() : "15");
                         setVolunteerCapacity(trip.volunteerCapacity && trip.volunteerCapacity !== 999999 ? trip.volunteerCapacity.toString() : "5");
+                        setIsFull(trip.isFull ?? false);
                         setDialogOpen(true);
                       }}
                       data-testid={`button-edit-trip-${trip.id}`}

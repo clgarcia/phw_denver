@@ -29,6 +29,7 @@ export const events = pgTable("events", {
   googleFormUrl: text("google_form_url"),
   isActive: boolean("is_active").notNull().default(true),
   requiresRegistration: boolean("requires_registration").notNull().default(true),
+  isFull: boolean("is_full").notNull().default(false),
   additionalDates: text("additional_dates"),
   dateRangeMode: boolean("date_range_mode"),
   dateRangeStart: text("date_range_start"),
@@ -53,6 +54,7 @@ export const programs = pgTable("programs", {
   imageUrl: text("image_url"),
   googleFormUrl: text("google_form_url"),
   isActive: boolean("is_active").notNull().default(true),
+  isFull: boolean("is_full").notNull().default(false),
   additionalDates: text("additional_dates"), // JSON array of {date, startTime, endTime} objects for individual dates
   dateRangeMode: boolean("date_range_mode"), // true for range, false/null for individual dates
   dateRangeStart: text("date_range_start"), // For range mode: start date
@@ -100,6 +102,7 @@ export const trips = pgTable("trips", {
   imageUrl: text("image_url"),
   googleFormUrl: text("google_form_url"),
   isActive: boolean("is_active").notNull().default(true),
+  isFull: boolean("is_full").notNull().default(false),
   additionalDates: text("additional_dates"), // JSON array of {date, startTime, endTime} objects for individual dates
   dateRangeMode: boolean("date_range_mode"), // true for range, false/null for individual dates
   dateRangeStart: text("date_range_start"), // For range mode: start date

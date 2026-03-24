@@ -25,8 +25,9 @@ export default function EventDetail() {
     queryKey: ["/api/events", id],
   });
 
-  const spotsLeft = event ? event.capacity - event.registeredCount : 0;
-  const fillPercentage = event ? (event.registeredCount / event.capacity) * 100 : 0;
+  const spotsLeft = event ? (event.isFull ? 0 : event.capacity - event.registeredCount) : 0;
+  const registeredDisplay = event ? (event.isFull ? event.capacity : event.registeredCount) : 0;
+  const fillPercentage = event ? (event.isFull ? 100 : (event.registeredCount / event.capacity) * 100) : 0;
 
   const handleRegisterClick = () => {
     if (event?.googleFormUrl) {
@@ -242,7 +243,7 @@ export default function EventDetail() {
                             <div className="space-y-2">
                               <div className="flex items-center justify-between text-sm">
                                 <span className="text-muted-foreground">Participant Capacity</span>
-                                <span className="font-medium">{event.registeredCount} / {event.capacity}</span>
+                                <span className="font-medium">{registeredDisplay} / {event.capacity}</span>
                               </div>
                               <Progress value={fillPercentage} className="h-2" />
                             </div>
@@ -251,9 +252,9 @@ export default function EventDetail() {
                             <div className="space-y-2">
                               <div className="flex items-center justify-between text-sm">
                                 <span className="text-muted-foreground">Volunteer Capacity</span>
-                                <span className="font-medium">0 / {event.volunteerCapacity}</span>
+                                <span className="font-medium">{event.isFull ? event.volunteerCapacity : 0} / {event.volunteerCapacity}</span>
                               </div>
-                              <Progress value={0} className="h-2" />
+                              <Progress value={event.isFull ? 100 : 0} className="h-2" />
                             </div>
                           )}
                         </div>
@@ -268,7 +269,7 @@ export default function EventDetail() {
                           </div>
                         </div>
 
-                        {spotsLeft > 0 ? (
+                        {spotsLeft > 0 && !event.isFull ? (
                           <Button 
                             className="w-full" 
                             size="lg" 
@@ -277,7 +278,7 @@ export default function EventDetail() {
                           >
                             Register for This Event
                           </Button>
-                        ) : event.volunteerCapacity && event.volunteerCapacity > 0 ? (
+                        ) : event.volunteerCapacity && event.volunteerCapacity > 0 && !event.isFull ? (
                           <Button 
                             className="w-full" 
                             size="lg" 
@@ -285,6 +286,10 @@ export default function EventDetail() {
                             onClick={handleRegisterClick}
                           >
                             Register for This Event
+                          </Button>
+                        ) : event.isFull ? (
+                          <Button className="w-full" size="lg" disabled>
+                            Event Full
                           </Button>
                         ) : event.capacity === 0 && (!event.volunteerCapacity || event.volunteerCapacity === 0) ? (
                           <Button className="w-full" size="lg" disabled>

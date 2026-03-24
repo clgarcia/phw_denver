@@ -31,8 +31,9 @@ export default function TripDetail() {
   });
 
   // Calculate spots left and fill percentage for the trip
-  const spotsLeft = trip ? trip.capacity - trip.registeredCount : 0;
-  const fillPercentage = trip ? (trip.registeredCount / trip.capacity) * 100 : 0;
+  const spotsLeft = trip ? (trip.isFull ? 0 : trip.capacity - trip.registeredCount) : 0;
+  const registeredDisplay = trip ? (trip.isFull ? trip.capacity : trip.registeredCount) : 0;
+  const fillPercentage = trip ? (trip.isFull ? 100 : (trip.registeredCount / trip.capacity) * 100) : 0;
 
   const handleRegisterClick = () => {
     if (trip?.googleFormUrl) {
@@ -256,7 +257,7 @@ export default function TripDetail() {
                       <Progress value={fillPercentage} className="h-2" />
                     </div>
 
-                    {spotsLeft > 0 ? (
+                    {spotsLeft > 0 && !trip.isFull ? (
                       <Button 
                         className="w-full" 
                         data-testid={`button-register-trip-${trip.id}`}
