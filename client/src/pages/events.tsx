@@ -137,23 +137,29 @@ export default function Events() {
                           <MapPin className="h-4 w-4" />
                           <span>{event.location}</span>
                         </div>
-                        <div className="flex items-center justify-between pt-2">
-                          {event.capacity ? (
+                        <div className="space-y-2 pt-2 border-t">
+                          {event.capacity !== null && event.capacity !== undefined && (
                             <div className="flex items-center gap-2 text-sm">
                               <Users className="h-4 w-4 text-primary" />
-                              <span className="text-primary font-medium">
-                                {event.capacity - event.registeredCount} spots left
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2 text-sm">
-                              <Users className="h-4 w-4 text-primary" />
-                              <span className="text-primary font-medium">
-                                Unlimited spaces
+                              <span className="text-muted-foreground">
+                                Participants: <span className="font-medium text-foreground">{event.capacity}</span>
                               </span>
                             </div>
                           )}
-                          <Button size="sm" variant="outline" data-testid={`button-view-event-${event.id}`}>
+                          {event.volunteerCapacity !== null && event.volunteerCapacity !== undefined && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Users className="h-4 w-4 text-primary" />
+                              <span className="text-muted-foreground">
+                                Volunteers: <span className="font-medium text-foreground">{event.volunteerCapacity}</span>
+                              </span>
+                            </div>
+                          )}
+                          {(event.capacity === null || event.capacity === undefined) && (event.volunteerCapacity === null || event.volunteerCapacity === undefined) && (
+                            <div className="text-sm text-muted-foreground">
+                              No capacity limits
+                            </div>
+                          )}
+                          <Button className="w-full" size="sm" variant="outline" data-testid={`button-view-event-${event.id}`}>
                             View Details
                           </Button>
                         </div>

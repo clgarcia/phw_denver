@@ -11,13 +11,9 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EventRegistrationForm } from "@/components/event-registration-form";
 import { PinVerificationModal } from "@/components/pin-verification-modal";
-import { parseAdditionalDates, formatDate as formatDateUtil, formatTime } from "@/lib/additional-dates";
+import { parseAdditionalDates, formatDate as formatDateUtil, formatTime, getEventDateDisplay } from "@/lib/additional-dates";
 import { useState } from "react";
 
-
-function formatDate(dateString: string): string {
-  return formatDateUtil(dateString);
-}
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -127,7 +123,7 @@ export default function EventDetail() {
                         <CardTitle className="text-2xl md:text-3xl" data-testid="text-event-title">
                           {event.title}
                         </CardTitle>
-                        <CardDescription className="mt-2">{formatDate(event.date)} at <span className="military-time">{formatTime(event.time)}</span></CardDescription>
+                        <CardDescription className="mt-2">{getEventDateDisplay(event).display}</CardDescription>
                       </div>
                       <Badge variant={event.isActive ? "default" : "secondary"}>
                         {event.isActive ? "Active" : "Inactive"}
@@ -142,59 +138,82 @@ export default function EventDetail() {
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                        <Calendar className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Date</p>
-                          <p className="font-medium">{formatDate(event.date)}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                        <Clock className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Time</p>
-                          <p className="font-medium military-time">{formatTime(event.time)}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                        <MapPin className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Location</p>
-                          <p className="font-medium">{event.location}</p>
-                        </div>
+                    <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
+                      <MapPin className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Location</p>
+                        <p className="font-medium">{event.location}</p>
                       </div>
                     </div>
 
                     {event.dateRangeMode && event.dateRangeStart && event.dateRangeEnd ? (
-                      <div className="pt-4 border-t">
-                        <h4 className="font-semibold mb-3 text-sm">Event Date Range</h4>
-                        <div className="p-3 rounded-lg bg-muted/50">
-                          <p className="text-sm text-muted-foreground">
-                            {formatDateUtil(event.dateRangeStart)} - {formatDateUtil(event.dateRangeEnd)}
-                          </p>
-                          <p className="font-medium military-time mt-1">
-                            {formatTime(event.dateRangeStartTime || event.time)} - {formatTime(event.dateRangeEndTime || event.time)}
-                          </p>
+                      <div className="pt-4 border-t space-y-3">
+                        <h4 className="font-semibold text-sm">Date Range Details</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="p-3 rounded-lg bg-muted/50">
+                            <p className="text-xs text-muted-foreground mb-1">Start Date</p>
+                            <p className="font-medium text-sm">{formatDateUtil(event.dateRangeStart)}</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-muted/50">
+                            <p className="text-xs text-muted-foreground mb-1">End Date</p>
+                            <p className="font-medium text-sm">{formatDateUtil(event.dateRangeEnd)}</p>
+                          </div>
+                          {event.dateRangeStartTime && (
+                            <div className="p-3 rounded-lg bg-muted/50">
+                              <p className="text-xs text-muted-foreground mb-1">Start Time</p>
+                              <p className="font-medium text-sm military-time">{formatTime(event.dateRangeStartTime)}</p>
+                            </div>
+                          )}
+                          {event.dateRangeEndTime && (
+                            <div className="p-3 rounded-lg bg-muted/50">
+                              <p className="text-xs text-muted-foreground mb-1">End Time</p>
+                              <p className="font-medium text-sm military-time">{formatTime(event.dateRangeEndTime)}</p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ) : event.additionalDates && parseAdditionalDates(event.additionalDates).length > 0 ? (
                       <div className="pt-4 border-t">
-                        <h4 className="font-semibold mb-3 text-sm">Additional Dates</h4>
+                        <h4 className="font-semibold mb-3 text-sm">Multiple Event Dates</h4>
                         <div className="space-y-2">
                           {parseAdditionalDates(event.additionalDates).map((dateObj, index) => (
                             <div key={index} className="p-3 rounded-lg bg-muted/50">
-                              <p className="text-sm text-muted-foreground">Date {index + 2}</p>
-                              <p className="font-medium">{formatDateUtil(dateObj.date)}</p>
-                              {dateObj.startTime && dateObj.endTime ? (
-                                <p className="font-medium military-time text-sm mt-1">{formatTime(dateObj.startTime)} - {formatTime(dateObj.endTime)}</p>
-                              ) : dateObj.startTime ? (
-                                <p className="font-medium military-time text-sm mt-1">{formatTime(dateObj.startTime)}</p>
-                              ) : dateObj.time ? (
-                                <p className="font-medium military-time text-sm mt-1">{formatTime(dateObj.time)}</p>
-                              ) : null}
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium">{formatDateUtil(dateObj.date)}</p>
+                                  {dateObj.startTime && dateObj.endTime ? (
+                                    <p className="font-medium military-time text-xs mt-1">{formatTime(dateObj.startTime)} - {formatTime(dateObj.endTime)}</p>
+                                  ) : dateObj.startTime ? (
+                                    <p className="font-medium military-time text-xs mt-1">{formatTime(dateObj.startTime)}</p>
+                                  ) : dateObj.time ? (
+                                    <p className="font-medium military-time text-xs mt-1">{formatTime(dateObj.time)}</p>
+                                  ) : null}
+                                </div>
+                              </div>
                             </div>
                           ))}
+                        </div>
+                      </div>
+                    ) : event.date ? (
+                      <div className="pt-4 border-t space-y-3">
+                        <h4 className="font-semibold text-sm">Event Details</h4>
+                        <div className="space-y-3">
+                          <div className="p-3 rounded-lg bg-muted/50">
+                            <p className="text-xs text-muted-foreground mb-1">Date</p>
+                            <p className="font-medium text-sm">{formatDateUtil(event.date)}</p>
+                          </div>
+                          {(event.startTime || event.endTime) && (
+                            <div className="p-3 rounded-lg bg-muted/50">
+                              <p className="text-xs text-muted-foreground mb-1">Time</p>
+                              <p className="font-medium text-sm military-time">
+                                {event.startTime && event.endTime 
+                                  ? `${formatTime(event.startTime)} - ${formatTime(event.endTime)}`
+                                  : event.startTime 
+                                  ? formatTime(event.startTime)
+                                  : formatTime(event.endTime || '')}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ) : null}
@@ -216,20 +235,33 @@ export default function EventDetail() {
                           This event is open to all. No registration needed.
                         </p>
                       </div>
-                    ) : event.capacity ? (
+                    ) : event.capacity !== null && event.capacity !== undefined || event.volunteerCapacity !== null && event.volunteerCapacity !== undefined ? (
                       <>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">Capacity</span>
-                            <span className="font-medium">{event.registeredCount} / {event.capacity}</span>
-                          </div>
-                          <Progress value={fillPercentage} className="h-2" />
+                        <div className="space-y-3">
+                          {event.capacity !== null && event.capacity !== undefined && (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground">Participant Capacity</span>
+                                <span className="font-medium">{event.registeredCount} / {event.capacity}</span>
+                              </div>
+                              <Progress value={fillPercentage} className="h-2" />
+                            </div>
+                          )}
+                          {event.volunteerCapacity !== null && event.volunteerCapacity !== undefined && (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground">Volunteer Capacity</span>
+                                <span className="font-medium">0 / {event.volunteerCapacity}</span>
+                              </div>
+                              <Progress value={0} className="h-2" />
+                            </div>
+                          )}
                         </div>
 
                         <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
                           <Users className="h-5 w-5 text-primary" />
                           <div>
-                            <p className="font-medium text-primary">{spotsLeft} spots remaining</p>
+                            <p className="font-medium text-primary">{spotsLeft} participant spots remaining</p>
                             <p className="text-sm text-muted-foreground">
                               {fillPercentage > 80 ? "Filling up fast!" : "Spots available"}
                             </p>
@@ -244,6 +276,19 @@ export default function EventDetail() {
                             onClick={handleRegisterClick}
                           >
                             Register for This Event
+                          </Button>
+                        ) : event.volunteerCapacity && event.volunteerCapacity > 0 ? (
+                          <Button 
+                            className="w-full" 
+                            size="lg" 
+                            data-testid="button-register-event"
+                            onClick={handleRegisterClick}
+                          >
+                            Register for This Event
+                          </Button>
+                        ) : event.capacity === 0 && (!event.volunteerCapacity || event.volunteerCapacity === 0) ? (
+                          <Button className="w-full" size="lg" disabled>
+                            Not Accepting Registrations
                           </Button>
                         ) : (
                           <Button className="w-full" size="lg" disabled>

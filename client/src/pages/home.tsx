@@ -11,16 +11,7 @@ import activityImage1 from "@assets/stock_images/fly_fishing_outdoor__104c4098.j
 import activityImage2 from "@assets/stock_images/fly_fishing_outdoor__02f9483b.jpg";
 import volunteerImage from "@assets/Volunteer_pic_1768761271488.png";
 import tripCoordinatorImage from "@assets/tripCoordinator_pic_1768761876957.png";
-
-function formatDate(dateString: string): string {
-  const [year, month, day] = dateString.split('-').map(Number);
-  const date = new Date(year, month - 1, day);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-}
+import { formatDate, formatTime, getEventDateDisplay } from "@/lib/additional-dates";
 
 export default function Home() {
   const { data: events = [], isLoading: eventsLoading } = useQuery<Event[]>({
@@ -121,33 +112,35 @@ export default function Home() {
               </div>
             ) : upcomingEvents.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {upcomingEvents.map((event, index) => (
-                  <Link key={event.id} href={`/events/${event.id}`}>
-                    <Card className="group h-full hover-elevate cursor-pointer transition-all duration-200 overflow-hidden">
-                      <div className="h-48 bg-muted overflow-hidden">
-                        <img 
-                          src={getEventImage(event, index)} 
-                          alt={event.title}
-                          className="w-full h-full object-contain mx-auto group-hover:scale-105 transition-transform duration-300 bg-white"
-                          style={{ maxHeight: 192 }}
-                        />
-                      </div>
-                      <CardHeader>
-                        <div className="text-sm text-primary font-medium mb-1">{formatDate(event.date)}</div>
-                        <CardTitle className="group-hover:text-primary transition-colors" data-testid={`text-event-title-${event.id}`}>
-                          {event.title}
-                        </CardTitle>
-                        <CardDescription className="line-clamp-2">{event.description}</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <MapPin className="h-4 w-4" />
-                          <span>{event.location}</span>
+                {upcomingEvents.map((event, index) => {
+                  const dateInfo = getEventDateDisplay(event);
+                  return (
+                    <Link key={event.id} href={`/events/${event.id}`}>
+                      <Card className="group h-full hover-elevate cursor-pointer transition-all duration-200 overflow-hidden">
+                        <div className="h-48 bg-muted overflow-hidden">
+                          <img 
+                            src={getEventImage(event, index)} 
+                            alt={event.title}
+                            className="w-full h-full object-contain mx-auto group-hover:scale-105 transition-transform duration-300 bg-white"
+                            style={{ maxHeight: 192 }}
+                          />
                         </div>
-                        <div className="pt-2">
-                          <Button 
-                            size="sm" 
-                            className="w-full bg-[#c73e1d]/90 hover:bg-[#c73e1d] border-[#c73e1d]/90" 
+                        <CardHeader>
+                          <div className="text-sm text-primary font-medium mb-1">{dateInfo.display}</div>
+                          <CardTitle className="group-hover:text-primary transition-colors" data-testid={`text-event-title-${event.id}`}>
+                            {event.title}
+                          </CardTitle>
+                          <CardDescription className="line-clamp-2">{event.description}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <MapPin className="h-4 w-4" />
+                            <span>{event.location}</span>
+                          </div>
+                          <div className="pt-2">
+                            <Button 
+                              size="sm" 
+                              className="w-full bg-[#c73e1d]/90 hover:bg-[#c73e1d] border-[#c73e1d]/90" 
                             data-testid={`button-details-event-${event.id}`}
                           >
                             See Details
@@ -156,7 +149,8 @@ export default function Home() {
                       </CardContent>
                     </Card>
                   </Link>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <Card className="p-12 text-center">

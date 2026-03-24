@@ -47,33 +47,67 @@ export default function AdminEvents() {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deleteEvent, setDeleteEvent] = useState<Event | null>(null);
   const [imageUrl, setImageUrl] = useState("");
-    // Pre-fill imageUrl when editing an event
-    useEffect(() => {
-      if (editingEvent && editingEvent.imageUrl) {
-        setImageUrl(editingEvent.imageUrl);
-      } else if (!editingEvent) {
-        setImageUrl("");
-      }
-    }, [editingEvent]);
+  
+  // Pre-fill imageUrl when editing an event
+  useEffect(() => {
+    if (editingEvent && editingEvent.imageUrl) {
+      setImageUrl(editingEvent.imageUrl);
+    } else if (!editingEvent) {
+      setImageUrl("");
+    }
+  }, [editingEvent]);
+
   const [imageUploading, setImageUploading] = useState(false);
-  const [additionalDates, setAdditionalDates] = useState<string[]>(["", "", "", "", ""]);
-  const [additionalDatesToWithTimes, setAdditionalDatesToWithTimes] = useState<Array<{date: string, startTime: string, endTime: string}>>([
+
+  // Date/Time mode states - only ONE mode can be active at a time
+  const [singleDateMode, setSingleDateMode] = useState(false);
+  const [singleDate, setSingleDate] = useState("");
+  const [singleDateStartTime, setSingleDateStartTime] = useState("");
+  const [singleDateEndTime, setSingleDateEndTime] = useState("");
+
+  const [multipleDatesMode, setMultipleDatesMode] = useState(false);
+  const [multipleDates, setMultipleDates] = useState<Array<{date: string, startTime: string, endTime: string}>>([
     { date: "", startTime: "", endTime: "" },
     { date: "", startTime: "", endTime: "" },
     { date: "", startTime: "", endTime: "" },
     { date: "", startTime: "", endTime: "" },
     { date: "", startTime: "", endTime: "" },
   ]);
+
   const [dateRangeMode, setDateRangeMode] = useState(false);
   const [dateRangeStart, setDateRangeStart] = useState("");
   const [dateRangeEnd, setDateRangeEnd] = useState("");
   const [dateRangeStartTime, setDateRangeStartTime] = useState("");
   const [dateRangeEndTime, setDateRangeEndTime] = useState("");
-  const [eventStartTime, setEventStartTime] = useState("");
-  const [eventEndTime, setEventEndTime] = useState("");
+
+  // Helper function to toggle modes exclusively
+  const toggleSingleDateMode = (value: boolean) => {
+    setSingleDateMode(value);
+    if (value) {
+      setMultipleDatesMode(false);
+      setDateRangeMode(false);
+    }
+  };
+
+  const toggleMultipleDatesMode = (value: boolean) => {
+    setMultipleDatesMode(value);
+    if (value) {
+      setSingleDateMode(false);
+      setDateRangeMode(false);
+    }
+  };
+
+  const toggleDateRangeMode = (value: boolean) => {
+    setDateRangeMode(value);
+    if (value) {
+      setSingleDateMode(false);
+      setMultipleDatesMode(false);
+    }
+  };
   const [hasCapacityLimit, setHasCapacityLimit] = useState(false);
   const [participantCapacity, setParticipantCapacity] = useState("");
   const [volunteerCapacity, setVolunteerCapacity] = useState("");
+  const [requiresRegistration, setRequiresRegistration] = useState(false);
 
   const { data: events = [], isLoading } = useQuery<Event[]>({
     queryKey: ["/api/events"],
@@ -132,103 +166,141 @@ export default function AdminEvents() {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Submitting event with imageUrl:", imageUrl);
     const formData = new FormData(e.currentTarget);
     
-    const mainDate = formData.get("date") as string;
-    
-    // Validate that at least one date option is provided
-    const hasMainDate = mainDate && mainDate.trim() !== "";
-    const hasAdditionalDates = additionalDatesToWithTimes.some(d => d.date && d.date.trim() !== "");
-    const hasDateRange = dateRangeMode && dateRangeStart && dateRangeEnd;
-    
-    if (!hasMainDate && !hasAdditionalDates && !hasDateRange) {
+    // Validate that exactly ONE date mode is active
+    const activeModes = [singleDateMode, multipleDatesMode, dateRangeMode].filter(Boolean).length;
+    if (activeModes === 0) {
       toast({ 
         title: "Missing date information", 
-        description: "Please enter at least one date using either the main date field, additional dates, or a date range.",
+        description: "Please enable and fill in one of the date options: Single Date, Multiple Dates, or Date Range.",
         variant: "destructive" 
       });
       return;
     }
-    
-    let additionalDatesJson: string | undefined = undefined;
-    
-    if (dateRangeMode) {
-      // Range mode - no additional dates array needed
-      additionalDatesJson = undefined;
-    } else {
-      // Individual dates mode - filter and collect dates with start/end times
-      const filteredDates = additionalDatesToWithTimes
-        .filter(d => d.date.trim() !== "")
-        .map(d => ({
-          date: d.date,
-          startTime: d.startTime || undefined,
-          endTime: d.endTime || undefined
-        }));
-      additionalDatesJson = filteredDates.length > 0 
-        ? JSON.stringify(filteredDates)
-        : undefined;
+
+    // Validate capacity fields when registration is required
+    if (requiresRegistration && participantCapacity === "") {
+      toast({ 
+        title: "Missing participant capacity", 
+        description: "Participant capacity is required when registration is enabled.",
+        variant: "destructive" 
+      });
+      return;
     }
-    
-    const data: InsertEvent = {
+
+    if (requiresRegistration && volunteerCapacity === "") {
+      toast({ 
+        title: "Missing volunteer capacity", 
+        description: "Volunteer capacity is required when registration is enabled.",
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    // Prepare data based on active mode
+    let eventData: InsertEvent = {
       title: formData.get("title") as string,
       description: formData.get("description") as string,
-      date: mainDate || undefined,
-      time: undefined,
-      startTime: eventStartTime && eventStartTime.trim() ? eventStartTime : undefined,
-      endTime: eventEndTime && eventEndTime.trim() ? eventEndTime : undefined,
       location: formData.get("location") as string,
-      capacity: hasCapacityLimit && participantCapacity ? parseInt(participantCapacity) : undefined,
-      volunteerCapacity: hasCapacityLimit && volunteerCapacity ? parseInt(volunteerCapacity) : undefined,
+      capacity: (hasCapacityLimit || requiresRegistration) && participantCapacity ? parseInt(participantCapacity) : undefined,
+      volunteerCapacity: (hasCapacityLimit || requiresRegistration) && volunteerCapacity ? parseInt(volunteerCapacity) : undefined,
       isActive: formData.get("isActive") === "on",
-      requiresRegistration: formData.get("requiresRegistration") === "on",
+      requiresRegistration: requiresRegistration,
       imageUrl,
       googleFormUrl: (formData.get("googleFormUrl") as string) || undefined,
-      additionalDates: additionalDatesJson,
-      dateRangeMode: dateRangeMode || undefined,
-      dateRangeStart: dateRangeMode && dateRangeStart ? dateRangeStart : undefined,
-      dateRangeEnd: dateRangeMode && dateRangeEnd ? dateRangeEnd : undefined,
-      dateRangeStartTime: dateRangeMode && dateRangeStartTime && dateRangeStartTime.trim() ? dateRangeStartTime : undefined,
-      dateRangeEndTime: dateRangeMode && dateRangeEndTime && dateRangeEndTime.trim() ? dateRangeEndTime : undefined,
+      date: undefined,
+      time: undefined,
+      startTime: undefined,
+      endTime: undefined,
+      additionalDates: undefined,
+      dateRangeMode: undefined,
+      dateRangeStart: undefined,
+      dateRangeEnd: undefined,
+      dateRangeStartTime: undefined,
+      dateRangeEndTime: undefined,
     };
 
-    console.log("Event form data to submit:", data);
+    // Populate data based on active mode
+    if (singleDateMode) {
+      if (!singleDate) {
+        toast({ 
+          title: "Missing date", 
+          description: "Please enter a date for Single Date mode.",
+          variant: "destructive" 
+        });
+        return;
+      }
+      eventData.date = singleDate;
+      eventData.startTime = singleDateStartTime && singleDateStartTime.trim() ? singleDateStartTime : undefined;
+      eventData.endTime = singleDateEndTime && singleDateEndTime.trim() ? singleDateEndTime : undefined;
+    } else if (multipleDatesMode) {
+      const filledDates = multipleDates.filter(d => d.date && d.date.trim() !== "");
+      if (filledDates.length === 0) {
+        toast({ 
+          title: "Missing dates", 
+          description: "Please enter at least one date in Multiple Dates mode.",
+          variant: "destructive" 
+        });
+        return;
+      }
+      eventData.date = filledDates[0].date; // Use first date as the primary date
+      eventData.additionalDates = JSON.stringify(filledDates.map(d => ({
+        date: d.date,
+        startTime: d.startTime || undefined,
+        endTime: d.endTime || undefined
+      })));
+    } else if (dateRangeMode) {
+      if (!dateRangeStart || !dateRangeEnd) {
+        toast({ 
+          title: "Missing dates", 
+          description: "Please enter both start and end dates for Date Range mode.",
+          variant: "destructive" 
+        });
+        return;
+      }
+      eventData.date = dateRangeStart; // Use start date as the primary date
+      eventData.dateRangeMode = true;
+      eventData.dateRangeStart = dateRangeStart;
+      eventData.dateRangeEnd = dateRangeEnd;
+      eventData.dateRangeStartTime = dateRangeStartTime && dateRangeStartTime.trim() ? dateRangeStartTime : undefined;
+      eventData.dateRangeEndTime = dateRangeEndTime && dateRangeEndTime.trim() ? dateRangeEndTime : undefined;
+    }
+
+    console.log("Event form data to submit:", eventData);
     if (editingEvent) {
-      updateMutation.mutate({ id: editingEvent.id, data });
+      updateMutation.mutate({ id: editingEvent.id, data: eventData });
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(eventData);
     }
   };
 
   const openEditDialog = (event: Event) => {
     setEditingEvent(event);
     
-    // Set single date start/end times
-    setEventStartTime(event.startTime || "");
-    setEventEndTime(event.endTime || "");
-    
     // Set capacity fields
     setHasCapacityLimit(!!(event.capacity || event.volunteerCapacity));
     setParticipantCapacity(event.capacity?.toString() || "");
     setVolunteerCapacity(event.volunteerCapacity?.toString() || "");
+    setRequiresRegistration(event.requiresRegistration ?? false);
     
-    // Set date range mode
-    setDateRangeMode(event.dateRangeMode || false);
-    setDateRangeStart(event.dateRangeStart || "");
-    setDateRangeEnd(event.dateRangeEnd || "");
-    setDateRangeStartTime(event.dateRangeStartTime || "");
-    setDateRangeEndTime(event.dateRangeEndTime || "");
-    
-    // Parse additional dates if they exist
-    if (event.additionalDates) {
+    // Determine which mode this event uses and load data accordingly
+    if (event.dateRangeMode) {
+      // Date range mode
+      toggleDateRangeMode(true);
+      setDateRangeStart(event.dateRangeStart || "");
+      setDateRangeEnd(event.dateRangeEnd || "");
+      setDateRangeStartTime(event.dateRangeStartTime || "");
+      setDateRangeEndTime(event.dateRangeEndTime || "");
+    } else if (event.additionalDates) {
+      // Multiple dates mode
+      toggleMultipleDatesMode(true);
       try {
         const parsed = JSON.parse(event.additionalDates);
-        // Handle multiple formats: old (date strings), v1 ({date, time}), new ({date, startTime, endTime})
         const datesWithTimes = parsed.map((item: any) => {
           if (typeof item === 'string') {
             return { date: item, startTime: "", endTime: "" };
           }
-          // Handle both old format with 'time' and new format with 'startTime/endTime'
           return {
             date: item.date || "",
             startTime: item.startTime || item.time || "",
@@ -239,9 +311,9 @@ export default function AdminEvents() {
         while (datesWithTimes.length < 5) {
           datesWithTimes.push({ date: "", startTime: "", endTime: "" });
         }
-        setAdditionalDatesToWithTimes(datesWithTimes);
+        setMultipleDates(datesWithTimes);
       } catch {
-        setAdditionalDatesToWithTimes([
+        setMultipleDates([
           { date: "", startTime: "", endTime: "" },
           { date: "", startTime: "", endTime: "" },
           { date: "", startTime: "", endTime: "" },
@@ -249,6 +321,12 @@ export default function AdminEvents() {
           { date: "", startTime: "", endTime: "" },
         ]);
       }
+    } else if (event.date) {
+      // Single date mode
+      toggleSingleDateMode(true);
+      setSingleDate(event.date || "");
+      setSingleDateStartTime(event.startTime || "");
+      setSingleDateEndTime(event.endTime || "");
     }
     
     setDialogOpen(true);
@@ -257,24 +335,33 @@ export default function AdminEvents() {
   const closeDialog = () => {
     setDialogOpen(false);
     setEditingEvent(null);
-    setAdditionalDates(["", "", "", "", ""]);
-    setAdditionalDatesToWithTimes([
+    
+    // Reset all date/time mode states
+    setSingleDateMode(false);
+    setSingleDate("");
+    setSingleDateStartTime("");
+    setSingleDateEndTime("");
+    
+    setMultipleDatesMode(false);
+    setMultipleDates([
       { date: "", startTime: "", endTime: "" },
       { date: "", startTime: "", endTime: "" },
       { date: "", startTime: "", endTime: "" },
       { date: "", startTime: "", endTime: "" },
       { date: "", startTime: "", endTime: "" },
     ]);
+    
     setDateRangeMode(false);
     setDateRangeStart("");
-    setHasCapacityLimit(false);
-    setParticipantCapacity("");
-    setVolunteerCapacity("");
     setDateRangeEnd("");
     setDateRangeStartTime("");
     setDateRangeEndTime("");
-    setEventStartTime("");
-    setEventEndTime("");
+    
+    // Reset capacity fields
+    setHasCapacityLimit(false);
+    setParticipantCapacity("");
+    setVolunteerCapacity("");
+    setRequiresRegistration(false);
   };
 
   return (
@@ -322,160 +409,195 @@ export default function AdminEvents() {
                   data-testid="input-event-description"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="date">Date (optional - use if single date event)</Label>
-                  <Input 
-                    id="date" 
-                    name="date" 
-                    type="date" 
-                    defaultValue={editingEvent?.date}
-                    data-testid="input-event-date"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="eventStartTime">Start Time (Military)</Label>
-                  <Input 
-                    id="eventStartTime" 
-                    type="text" 
-                    pattern="\d{2}:\d{2}" 
-                    placeholder="HH:mm (e.g., 14:30)"
-                    value={eventStartTime}
-                    onChange={(e) => setEventStartTime(e.target.value)}
-                    data-testid="input-event-start-time"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="eventEndTime">End Time (Military)</Label>
-                  <Input 
-                    id="eventEndTime" 
-                    type="text" 
-                    pattern="\d{2}:\d{2}" 
-                    placeholder="HH:mm (e.g., 16:00)"
-                    value={eventEndTime}
-                    onChange={(e) => setEventEndTime(e.target.value)}
-                    data-testid="input-event-end-time"
-                  />
-                </div>
-              </div>
 
-              {/* Additional Dates Section */}
-              <div className="space-y-2 border-t pt-4">
-                <div className="flex items-center justify-between">
-                  <Label>Additional Event Options</Label>
+              {/* Date and Time Options Section - Only ONE can be active at a time */}
+              <div className="space-y-4 border-t pt-4">
+                <div className="text-sm font-semibold">Date & Time Options</div>
+                <p className="text-xs text-muted-foreground">Enable only one of the following options</p>
+
+                {/* Option 1: Single Date */}
+                <div className="space-y-3 rounded border p-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
-                      {dateRangeMode ? "Date Range" : "Individual Dates"}
-                    </span>
                     <Switch
-                      checked={dateRangeMode}
-                      onCheckedChange={setDateRangeMode}
-                      data-testid="switch-event-date-range-mode"
+                      id="singleDateToggle"
+                      checked={singleDateMode}
+                      onCheckedChange={toggleSingleDateMode}
+                      data-testid="switch-single-date-mode"
                     />
+                    <Label htmlFor="singleDateToggle" className="font-medium">Single Date with Times</Label>
                   </div>
-                </div>
-
-                {dateRangeMode ? (
-                  <div className="space-y-3 pt-3">
-                    <p className="text-xs text-muted-foreground">
-                      Define a date range when this event occurs
-                    </p>
-                    <div className="grid grid-cols-2 gap-3">
+                  
+                  {singleDateMode && (
+                    <div className="space-y-3 bg-muted/30 rounded p-2 ml-6">
                       <div className="space-y-2">
-                        <Label htmlFor="dateRangeStart">Range Start Date</Label>
-                        <Input
-                          id="dateRangeStart"
-                          type="date"
-                          value={dateRangeStart}
-                          onChange={(e) => setDateRangeStart(e.target.value)}
-                          data-testid="input-event-date-range-start"
+                        <Label htmlFor="singleDate">Date *</Label>
+                        <Input 
+                          id="singleDate" 
+                          type="date" 
+                          value={singleDate}
+                          onChange={(e) => setSingleDate(e.target.value)}
+                          data-testid="input-single-date"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="dateRangeEnd">Range End Date</Label>
-                        <Input
-                          id="dateRangeEnd"
-                          type="date"
-                          value={dateRangeEnd}
-                          onChange={(e) => setDateRangeEnd(e.target.value)}
-                          data-testid="input-event-date-range-end"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="dateRangeStartTime">Start Time (Military)</Label>
-                        <Input
-                          id="dateRangeStartTime"
-                          type="text"
-                          pattern="\d{2}:\d{2}"
-                          placeholder="HH:mm"
-                          value={dateRangeStartTime}
-                          onChange={(e) => setDateRangeStartTime(e.target.value)}
-                          data-testid="input-event-date-range-start-time"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="dateRangeEndTime">End Time (Military)</Label>
-                        <Input
-                          id="dateRangeEndTime"
-                          type="text"
-                          pattern="\d{2}:\d{2}"
-                          placeholder="HH:mm"
-                          value={dateRangeEndTime}
-                          onChange={(e) => setDateRangeEndTime(e.target.value)}
-                          data-testid="input-event-date-range-end-time"
-                        />
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="singleDateStartTime">Start Time (Military)</Label>
+                          <Input 
+                            id="singleDateStartTime" 
+                            type="text" 
+                            pattern="\d{4}" 
+                            placeholder="1430"
+                            maxLength="4"
+                            value={singleDateStartTime}
+                            onChange={(e) => setSingleDateStartTime(e.target.value)}
+                            data-testid="input-single-date-start-time"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="singleDateEndTime">End Time (Military)</Label>
+                          <Input 
+                            id="singleDateEndTime" 
+                            type="text" 
+                            pattern="\d{4}" 
+                            placeholder="1600"
+                            maxLength="4"
+                            value={singleDateEndTime}
+                            onChange={(e) => setSingleDateEndTime(e.target.value)}
+                            data-testid="input-single-date-end-time"
+                          />
+                        </div>
                       </div>
                     </div>
+                  )}
+                </div>
+
+                {/* Option 2: Multiple Dates */}
+                <div className="space-y-3 rounded border p-3">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="multipleDatesToggle"
+                      checked={multipleDatesMode}
+                      onCheckedChange={toggleMultipleDatesMode}
+                      data-testid="switch-multiple-dates-mode"
+                    />
+                    <Label htmlFor="multipleDatesToggle" className="font-medium">Multiple Dates (up to 5)</Label>
                   </div>
-                ) : (
-                  <div className="space-y-3 pt-3">
-                    <p className="text-xs text-muted-foreground">
-                      Add up to 5 additional dates with start and end times (military format, optional). Leave blank to skip.
-                    </p>
-                    <div className="space-y-2">
-                      {additionalDatesToWithTimes.map((item, index) => (
+                  
+                  {multipleDatesMode && (
+                    <div className="space-y-2 bg-muted/30 rounded p-2 ml-6">
+                      <p className="text-xs text-muted-foreground">Add up to 5 dates with optional start and end times</p>
+                      {multipleDates.map((item, index) => (
                         <div key={index} className="grid grid-cols-3 gap-2">
                           <Input
                             type="date"
                             value={item.date}
                             onChange={(e) => {
-                              const newItems = [...additionalDatesToWithTimes];
+                              const newItems = [...multipleDates];
                               newItems[index].date = e.target.value;
-                              setAdditionalDatesToWithTimes(newItems);
+                              setMultipleDates(newItems);
                             }}
                             placeholder={`Date ${index + 1}`}
-                            data-testid={`input-event-additional-date-${index + 1}`}
+                            data-testid={`input-multiple-date-${index + 1}`}
                           />
                           <Input
                             type="text"
-                            pattern="\d{2}:\d{2}"
+                            pattern="\d{4}"
+                            maxLength="4"
                             value={item.startTime}
                             onChange={(e) => {
-                              const newItems = [...additionalDatesToWithTimes];
+                              const newItems = [...multipleDates];
                               newItems[index].startTime = e.target.value;
-                              setAdditionalDatesToWithTimes(newItems);
+                              setMultipleDates(newItems);
                             }}
-                            placeholder="Start HH:mm"
-                            data-testid={`input-event-additional-start-time-${index + 1}`}
+                            placeholder="Start 1430"
+                            data-testid={`input-multiple-date-start-time-${index + 1}`}
                           />
                           <Input
                             type="text"
-                            pattern="\d{2}:\d{2}"
+                            pattern="\d{4}"
+                            maxLength="4"
                             value={item.endTime}
                             onChange={(e) => {
-                              const newItems = [...additionalDatesToWithTimes];
+                              const newItems = [...multipleDates];
                               newItems[index].endTime = e.target.value;
-                              setAdditionalDatesToWithTimes(newItems);
+                              setMultipleDates(newItems);
                             }}
-                            placeholder="End HH:mm"
-                            data-testid={`input-event-additional-end-time-${index + 1}`}
+                            placeholder="End 1600"
+                            data-testid={`input-multiple-date-end-time-${index + 1}`}
                           />
                         </div>
                       ))}
                     </div>
+                  )}
+                </div>
+
+                {/* Option 3: Date Range */}
+                <div className="space-y-3 rounded border p-3">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="dateRangeToggle"
+                      checked={dateRangeMode}
+                      onCheckedChange={toggleDateRangeMode}
+                      data-testid="switch-date-range-mode"
+                    />
+                    <Label htmlFor="dateRangeToggle" className="font-medium">Date Range with Times</Label>
                   </div>
-                )}
+                  
+                  {dateRangeMode && (
+                    <div className="space-y-3 bg-muted/30 rounded p-2 ml-6">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="dateRangeStart">Start Date *</Label>
+                          <Input
+                            id="dateRangeStart"
+                            type="date"
+                            value={dateRangeStart}
+                            onChange={(e) => setDateRangeStart(e.target.value)}
+                            data-testid="input-date-range-start"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="dateRangeEnd">End Date *</Label>
+                          <Input
+                            id="dateRangeEnd"
+                            type="date"
+                            value={dateRangeEnd}
+                            onChange={(e) => setDateRangeEnd(e.target.value)}
+                            data-testid="input-date-range-end"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="dateRangeStartTime">Start Time (Military)</Label>
+                          <Input
+                            id="dateRangeStartTime"
+                            type="text"
+                            pattern="\d{4}"
+                            placeholder="1430"
+                            maxLength="4"
+                            value={dateRangeStartTime}
+                            onChange={(e) => setDateRangeStartTime(e.target.value)}
+                            data-testid="input-date-range-start-time"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="dateRangeEndTime">End Time (Military)</Label>
+                          <Input
+                            id="dateRangeEndTime"
+                            type="text"
+                            pattern="\d{4}"
+                            placeholder="1600"
+                            maxLength="4"
+                            value={dateRangeEndTime}
+                            onChange={(e) => setDateRangeEndTime(e.target.value)}
+                            data-testid="input-date-range-end-time"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="location">Location</Label>
                 <Input 
@@ -494,14 +616,14 @@ export default function AdminEvents() {
                 />
                 <Label>Has Capacity Limit</Label>
               </div>
-              {hasCapacityLimit && (
+              {(hasCapacityLimit || requiresRegistration) && (
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="participantCapacity">Participant Capacity</Label>
                     <Input 
                       id="participantCapacity" 
                       type="number" 
-                      min="1"
+                      min="0"
                       value={participantCapacity}
                       onChange={(e) => setParticipantCapacity(e.target.value)}
                       data-testid="input-event-participant-capacity"
@@ -513,7 +635,7 @@ export default function AdminEvents() {
                     <Input 
                       id="volunteerCapacity" 
                       type="number" 
-                      min="1"
+                      min="0"
                       value={volunteerCapacity}
                       onChange={(e) => setVolunteerCapacity(e.target.value)}
                       data-testid="input-event-volunteer-capacity"
@@ -546,6 +668,8 @@ export default function AdminEvents() {
                 <Switch 
                   id="requiresRegistration" 
                   name="requiresRegistration" 
+                  checked={requiresRegistration}
+                  onCheckedChange={setRequiresRegistration}
                   defaultChecked={editingEvent?.requiresRegistration ?? true}
                   data-testid="switch-event-requires-registration"
                 />
@@ -611,9 +735,22 @@ export default function AdminEvents() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">{event.location}</span>
-                  <span className="font-medium">{event.registeredCount}/{event.capacity}</span>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">{event.location}</span>
+                  </div>
+                  {event.capacity && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Participants:</span>
+                      <span className="font-medium">{event.registeredCount}/{event.capacity}</span>
+                    </div>
+                  )}
+                  {event.volunteerCapacity && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Volunteers:</span>
+                      <span className="font-medium">0/{event.volunteerCapacity}</span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <Button 
