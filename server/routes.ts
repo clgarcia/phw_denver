@@ -9,7 +9,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 import { createServer, type Server } from "http";
 import { storage } from "./storage.js";
 import { insertEventSchema, insertProgramSchema, insertTripSchema, insertRegistrationSchema } from "../shared/schema.js";
-import { sendRegistrationConfirmation } from "./email.js";
 
 // Registers all API endpoints for the application
 export async function registerRoutes(
@@ -194,7 +193,7 @@ export async function registerRoutes(
         if (!trip) {
           return res.status(400).json({ message: "Trip not found" });
         }
-        if (trip.capacity && trip.registeredCount >= trip.capacity) {
+        if (trip.isFull) {
           return res.status(400).json({ message: "Trip is full" });
         }
       }
@@ -235,24 +234,6 @@ export async function registerRoutes(
         hasProgram: !!program,
         hasTrip: !!trip,
       });
-
-      sendRegistrationConfirmation({
-        recipientEmail: registration.email,
-        recipientName: `${registration.firstName} ${registration.lastName}`,
-        participationType: registration.participationType || "participant",
-        eventTitle: event?.title,
-        eventDate: event?.date ?? undefined,
-        eventTime: event?.time ?? undefined,
-        eventLocation: event?.location,
-        programName: program?.name,
-        programStartDate: program?.startDate ?? undefined,
-        tripName: trip?.name,
-        tripDate: trip?.date ?? undefined,
-        tripEndDate: trip?.endDate ?? undefined,
-        tripTime: trip?.time ?? undefined,
-        tripEndTime: trip?.endTime ?? undefined,
-        tripMeetupLocation: trip?.meetupLocation,
-      }).catch(err => console.error("Email send failed:", err));
 
       res.status(201).json(registration);
     } catch (error) {

@@ -10,6 +10,7 @@ import type { Program } from "@shared/schema";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { formatTime, parseAdditionalDates } from "@/lib/additional-dates";
 
 
 // Programs page displays a list of available programs with search functionality
@@ -23,6 +24,30 @@ function formatDate(dateString: string): string {
     month: 'long',
     day: 'numeric',
   });
+}
+
+// Parse and display location information from JSON format
+function getLocationDisplay(location: string): string {
+  if (!location) return '';
+  try {
+    const data = JSON.parse(location);
+    return `${data.name}, ${data.address}`;
+  } catch {
+    // Fallback for old format
+    return location;
+  }
+}
+
+// Parse location into name and address components
+function getLocationNameAndAddress(location: string): { name: string; address: string } {
+  if (!location) return { name: '', address: '' };
+  try {
+    const data = JSON.parse(location);
+    return { name: data.name || '', address: data.address || '' };
+  } catch {
+    // Fallback for old format
+    return { name: location, address: '' };
+  }
 }
 
 // Main component for displaying and searching programs
@@ -98,7 +123,7 @@ export default function Programs() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredPrograms.map((program) => (
                   <Link key={program.id} href={`/programs/${program.id}`}>
-                    <Card className="group h-full hover-elevate cursor-pointer transition-all duration-200">
+                    <Card className="group h-full flex flex-col hover-elevate cursor-pointer transition-all duration-200">
                       {program.imageUrl ? (
                         <div className="h-48 rounded-t-lg overflow-hidden flex items-center justify-center bg-black/5">
                           <div className="flex items-center justify-center h-full w-full bg-white" style={{ minHeight: 192 }}>
@@ -126,24 +151,61 @@ export default function Programs() {
                         </CardTitle>
                         <CardDescription className="line-clamp-2">{program.description}</CardDescription>
                       </CardHeader>
-                      <CardContent className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          <span>{formatDate(program.startDate)}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="h-4 w-4" />
-                          <span>{program.schedule}</span>
-                        </div>
-                        {/* Location field removed from Program type. If needed, add to schema and backend. */}
-                        <div className="flex items-center justify-between pt-2">
-                          <div className="flex items-center gap-2 text-sm">
-                            <Users className="h-4 w-4 text-primary" />
-                            <span className="text-primary font-medium">
-                              {program.capacity - program.registeredCount} spots left
+                      <CardContent className="flex flex-col flex-grow space-y-0">
+                        <div className="space-y-2 flex-grow">
+                          <div className="h-6 flex items-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="h-5 w-5" />
+                            <span>
+                              {program.additionalDates && parseAdditionalDates(program.additionalDates).length > 0
+                                ? "Multiple dates"
+                                : formatDate(program.startDate)}
                             </span>
                           </div>
-                          <Button size="sm" variant="outline" data-testid={`button-view-program-${program.id}`}>
+                          <div className="h-6 flex items-center gap-2 text-sm text-muted-foreground">
+                            <Clock className="h-5 w-5" />
+                            <span>
+                              {program.additionalDates && parseAdditionalDates(program.additionalDates).length > 0
+                                ? (() => {
+                                    const dates = parseAdditionalDates(program.additionalDates);
+                                    // Check if there are multiple different times
+                                    const times = dates.map(d => {
+                                      if (d.startTime && d.endTime) {
+                                        return `${formatTime(d.startTime)}-${formatTime(d.endTime)}`;
+                                      } else if (d.time) {
+                                        return formatTime(d.time);
+                                      }
+                                      return null;
+                                    }).filter(Boolean);
+                                    
+                                    // Check for unique times
+                                    const uniqueTimes = [...new Set(times)];
+                                    
+                                    if (uniqueTimes.length > 1) {
+                                      return "Times vary";
+                                    } else if (uniqueTimes.length === 1) {
+                                      return uniqueTimes[0];
+                                    } else if (program.startTime && program.endTime) {
+                                      return `${formatTime(program.startTime)} - ${formatTime(program.endTime)}`;
+                                    }
+                                    return '-';
+                                  })()
+                                : program.startTime && program.endTime ? `${formatTime(program.startTime)} - ${formatTime(program.endTime)}` : '-'}
+                            </span>
+                          </div>
+                          {program.location && (
+                            <div className="h-12 flex gap-2 text-sm text-muted-foreground">
+                              <MapPin className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                              <div className="flex flex-col">
+                                <span>{getLocationNameAndAddress(program.location).name}</span>
+                                {getLocationNameAndAddress(program.location).address && (
+                                  <span className="text-xs">{getLocationNameAndAddress(program.location).address}</span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div className="space-y-2 pt-2 border-t mt-auto">
+                          <Button className="w-full bg-[#c73e1d]/90 hover:bg-[#c73e1d] border-[#c73e1d]/90 text-white" size="lg" data-testid={`button-view-program-${program.id}`}>
                             View Details
                           </Button>
                         </div>

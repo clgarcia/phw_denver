@@ -1,6 +1,11 @@
 // Main server entry point for the application
 // Sets up Express, API routes, static file serving, error handling, and Vite (for dev)
 
+// Handle self-signed certificates in production (Render PostgreSQL)
+if (process.env.NODE_ENV === "production" || process.env.DATABASE_URL?.includes("render")) {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+}
+
 import "dotenv/config"; // Load environment variables from .env
 import express, { type Request, Response, NextFunction } from "express";
 import { dirname } from "path";

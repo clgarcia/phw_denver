@@ -29,6 +29,39 @@ function formatTime(timeString: string): string {
   }
 }
 
+function getLocationDisplay(location: string): string {
+  if (!location) return '';
+  try {
+    const data = JSON.parse(location);
+    return `${data.name}, ${data.address}`;
+  } catch {
+    // Fallback for old format
+    return location;
+  }
+}
+
+function getLocationNameAndAddress(location: string): { name: string; address: string } {
+  if (!location) return { name: '', address: '' };
+  try {
+    const data = JSON.parse(location);
+    return { name: data.name || '', address: data.address || '' };
+  } catch {
+    // Fallback for old format
+    return { name: location, address: '' };
+  }
+}
+
+function getLocationSearchText(location: string): string {
+  if (!location) return '';
+  try {
+    const data = JSON.parse(location);
+    return `${data.name} ${data.address}`.toLowerCase();
+  } catch {
+    // Fallback for old format
+    return location.toLowerCase();
+  }
+}
+
 export default function Events() {
   const [searchTerm, setSearchTerm] = useState("");
   
@@ -42,7 +75,7 @@ export default function Events() {
   const filteredEvents = activeEvents.filter(event =>
     event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    event.location.toLowerCase().includes(searchTerm.toLowerCase())
+    getLocationSearchText(event.location).includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -96,7 +129,7 @@ export default function Events() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredEvents.map((event) => (
                   <Link key={event.id} href={`/events/${event.id}`}>
-                    <Card className="group h-full hover-elevate cursor-pointer transition-all duration-200">
+                    <Card className="group h-full hover-elevate cursor-pointer transition-all duration-200 flex flex-col">
                       {event.imageUrl ? (
                         <div className="h-48 rounded-t-lg overflow-hidden flex items-center justify-center bg-black/5">
                           <div className="flex items-center justify-center h-full w-full bg-white" style={{ minHeight: 192 }}>
@@ -124,42 +157,46 @@ export default function Events() {
                         </CardTitle>
                         <CardDescription className="line-clamp-2">{event.description}</CardDescription>
                       </CardHeader>
-                      <CardContent className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          <span>{formatDate(event.date)}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="h-4 w-4" />
-                          <span className="military-time">{formatTime(event.time)}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <MapPin className="h-4 w-4" />
-                          <span>{event.location}</span>
-                        </div>
-                        <div className="space-y-2 pt-2 border-t">
-                          {event.capacity !== null && event.capacity !== undefined && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <Users className="h-4 w-4 text-primary" />
-                              <span className="text-muted-foreground">
-                                Participants: <span className="font-medium text-foreground">{event.capacity}</span>
+                      <CardContent className="flex flex-col flex-grow space-y-0">
+                        <div className="space-y-2 flex-grow">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="h-5 w-5" />
+                            <span>
+                              {event.dateRangeMode || (event.additionalDates && JSON.parse(event.additionalDates).length > 0)
+                                ? "Multiple Days"
+                                : event.date
+                                ? formatDate(event.date)
+                                : "Date TBA"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Clock className="h-5 w-5" />
+                            {event.dateRangeMode || (event.additionalDates && JSON.parse(event.additionalDates).length > 0) ? (
+                              <span>Times vary</span>
+                            ) : (
+                              <span>
+                                {event.startTime && event.endTime 
+                                  ? `${formatTime(event.startTime)} - ${formatTime(event.endTime)}`
+                                  : event.startTime 
+                                  ? formatTime(event.startTime)
+                                  : event.time 
+                                  ? formatTime(event.time)
+                                  : 'Time TBA'}
                               </span>
+                            )}
+                          </div>
+                          <div className="flex gap-2 text-sm text-muted-foreground">
+                            <MapPin className="h-5 w-5 flex-shrink-0" />
+                            <div className="flex flex-col">
+                              <span>{getLocationNameAndAddress(event.location).name}</span>
+                              {getLocationNameAndAddress(event.location).address && (
+                                <span className="text-xs">{getLocationNameAndAddress(event.location).address}</span>
+                              )}
                             </div>
-                          )}
-                          {event.volunteerCapacity !== null && event.volunteerCapacity !== undefined && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <Users className="h-4 w-4 text-primary" />
-                              <span className="text-muted-foreground">
-                                Volunteers: <span className="font-medium text-foreground">{event.volunteerCapacity}</span>
-                              </span>
-                            </div>
-                          )}
-                          {(event.capacity === null || event.capacity === undefined) && (event.volunteerCapacity === null || event.volunteerCapacity === undefined) && (
-                            <div className="text-sm text-muted-foreground">
-                              No capacity limits
-                            </div>
-                          )}
-                          <Button className="w-full" size="sm" variant="outline" data-testid={`button-view-event-${event.id}`}>
+                          </div>
+                        </div>
+                        <div className="space-y-2 pt-2 border-t mt-auto">
+                          <Button className="w-full bg-[#c73e1d]/90 hover:bg-[#c73e1d] border-[#c73e1d]/90 text-white" size="sm" data-testid={`button-view-event-${event.id}`}>
                             View Details
                           </Button>
                         </div>

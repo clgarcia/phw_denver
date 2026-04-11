@@ -70,6 +70,25 @@ export function TripRegistrationForm({ tripId, onSuccess }: TripRegistrationForm
 
   const globalPin = settingsData?.pin as string | undefined;
 
+  // If trip is full, show full message
+  if (trip?.isFull) {
+    return (
+      <div className="space-y-4">
+        {trip && (
+          <Card className="bg-muted/50">
+            <CardHeader>
+              <CardTitle className="text-lg">{trip.name}</CardTitle>
+            </CardHeader>
+          </Card>
+        )}
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>This trip is currently full and registration is not available.</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   // If Google Form URL is provided with a global PIN, show PIN verification
   if (trip?.googleFormUrl && globalPin) {
     const isPinCorrect = enteredPin === globalPin;
@@ -156,7 +175,7 @@ export function TripRegistrationForm({ tripId, onSuccess }: TripRegistrationForm
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Time:</span>
-                <span className="font-medium military-time">{formatTime(trip.time)} - {formatTime(trip.endTime)}</span>
+                <span className="font-medium">{formatTime(trip.startTime)} - {formatTime(trip.endTime)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Meetup Location:</span>
@@ -255,7 +274,7 @@ export function TripRegistrationForm({ tripId, onSuccess }: TripRegistrationForm
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Time:</span>
-              <span className="font-medium military-time">{formatTime(trip.time)} - {formatTime(trip.endTime)}</span>
+              <span className="font-medium">{formatTime(trip.startTime)} - {formatTime(trip.endTime)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Meetup Location:</span>

@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Calendar, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Calendar, Plus, Pencil, Trash2, Loader2, MapPin } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import type { Event, InsertEvent } from "@shared/schema";
 import { useState, useEffect } from "react";
@@ -41,6 +41,17 @@ function formatDate(dateString: string): string {
   });
 }
 
+function getLocationDisplay(location: string): string {
+  if (!location) return '';
+  try {
+    const data = JSON.parse(location);
+    return `${data.name}, ${data.address}`;
+  } catch {
+    // Fallback for old format
+    return location;
+  }
+}
+
 export default function AdminEvents() {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -54,6 +65,13 @@ export default function AdminEvents() {
       setImageUrl(editingEvent.imageUrl);
     } else if (!editingEvent) {
       setImageUrl("");
+    }
+  }, [editingEvent]);
+
+  // Open dialog when we start editing an event
+  useEffect(() => {
+    if (editingEvent) {
+      setDialogOpen(true);
     }
   }, [editingEvent]);
 
@@ -104,11 +122,18 @@ export default function AdminEvents() {
       setMultipleDatesMode(false);
     }
   };
-  const [hasCapacityLimit, setHasCapacityLimit] = useState(false);
-  const [participantCapacity, setParticipantCapacity] = useState("");
-  const [volunteerCapacity, setVolunteerCapacity] = useState("");
   const [requiresRegistration, setRequiresRegistration] = useState(false);
-  const [isFull, setIsFull] = useState(false);
+  const [googleFormUrl, setGoogleFormUrl] = useState("");
+  const [locationName, setLocationName] = useState("");
+  const [locationAddress, setLocationAddress] = useState("");
+
+  // When googleFormUrl changes, automatically enable requiresRegistration
+  const handleGoogleFormUrlChange = (value: string) => {
+    setGoogleFormUrl(value);
+    if (value.trim()) {
+      setRequiresRegistration(true);
+    }
+  };
 
   const { data: events = [], isLoading } = useQuery<Event[]>({
     queryKey: ["/api/events"],
@@ -169,6 +194,16 @@ export default function AdminEvents() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
+    // Validate location fields
+    if (!locationName.trim() || !locationAddress.trim()) {
+      toast({ 
+        title: "Missing location information", 
+        description: "Please enter both location name and address.",
+        variant: "destructive" 
+      });
+      return;
+    }
+    
     // Validate that exactly ONE date mode is active
     const activeModes = [singleDateMode, multipleDatesMode, dateRangeMode].filter(Boolean).length;
     if (activeModes === 0) {
@@ -180,20 +215,11 @@ export default function AdminEvents() {
       return;
     }
 
-    // Validate capacity fields when registration is required
-    if (requiresRegistration && participantCapacity === "") {
+    // Validate Google Form URL when registration is required
+    if (requiresRegistration && !googleFormUrl.trim()) {
       toast({ 
-        title: "Missing participant capacity", 
-        description: "Participant capacity is required when registration is enabled.",
-        variant: "destructive" 
-      });
-      return;
-    }
-
-    if (requiresRegistration && volunteerCapacity === "") {
-      toast({ 
-        title: "Missing volunteer capacity", 
-        description: "Volunteer capacity is required when registration is enabled.",
+        title: "Missing Google Form URL", 
+        description: "Google Form URL is required when registration is enabled.",
         variant: "destructive" 
       });
       return;
@@ -203,14 +229,11 @@ export default function AdminEvents() {
     let eventData: InsertEvent = {
       title: formData.get("title") as string,
       description: formData.get("description") as string,
-      location: formData.get("location") as string,
-      capacity: (hasCapacityLimit || requiresRegistration) && participantCapacity ? parseInt(participantCapacity) : undefined,
-      volunteerCapacity: (hasCapacityLimit || requiresRegistration) && volunteerCapacity ? parseInt(volunteerCapacity) : undefined,
+      location: JSON.stringify({ name: locationName.trim(), address: locationAddress.trim() }),
       isActive: formData.get("isActive") === "on",
       requiresRegistration: requiresRegistration,
-      isFull: isFull,
       imageUrl,
-      googleFormUrl: (formData.get("googleFormUrl") as string) || undefined,
+      googleFormUrl: googleFormUrl.trim() ? googleFormUrl.trim() : undefined,
       date: undefined,
       time: undefined,
       startTime: undefined,
@@ -285,7 +308,19 @@ export default function AdminEvents() {
     setParticipantCapacity(event.capacity?.toString() || "");
     setVolunteerCapacity(event.volunteerCapacity?.toString() || "");
     setRequiresRegistration(event.requiresRegistration ?? false);
+    setGoogleFormUrl(event.googleFormUrl || "");
     setIsFull(event.isFull ?? false);
+    
+    // Parse location from JSON format
+    try {
+      const locationData = JSON.parse(event.location);
+      setLocationName(locationData.name || "");
+      setLocationAddress(locationData.address || "");
+    } catch {
+      // Fallback for old format or plain text
+      setLocationName(event.location || "");
+      setLocationAddress("");
+    }
     
     // Determine which mode this event uses and load data accordingly
     if (event.dateRangeMode) {
@@ -360,12 +395,10 @@ export default function AdminEvents() {
     setDateRangeStartTime("");
     setDateRangeEndTime("");
     
-    // Reset capacity fields
-    setHasCapacityLimit(false);
-    setParticipantCapacity("");
-    setVolunteerCapacity("");
     setRequiresRegistration(false);
-    setIsFull(false);
+    setGoogleFormUrl("");
+    setLocationName("");
+    setLocationAddress("");
   };
 
   return (
@@ -392,7 +425,7 @@ export default function AdminEvents() {
                 {editingEvent ? "Update the event details below" : "Fill in the details for your new event"}
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form key={editingEvent?.id || "new"} onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="title">Event Title</Label>
                 <Input 
@@ -603,58 +636,36 @@ export default function AdminEvents() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
+                <Label htmlFor="locationName">Location Name</Label>
                 <Input 
-                  id="location" 
-                  name="location" 
+                  id="locationName" 
                   required 
-                  defaultValue={editingEvent?.location}
-                  data-testid="input-event-location"
+                  value={locationName}
+                  onChange={(e) => setLocationName(e.target.value)}
+                  data-testid="input-event-location-name"
+                  placeholder="e.g., Cherry Creek Park"
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <Switch 
-                  checked={hasCapacityLimit}
-                  onCheckedChange={setHasCapacityLimit}
-                  data-testid="switch-event-capacity-limit"
-                />
-                <Label>Has Capacity Limit</Label>
-              </div>
-              {(hasCapacityLimit || requiresRegistration) && (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="participantCapacity">Participant Capacity</Label>
-                    <Input 
-                      id="participantCapacity" 
-                      type="number" 
-                      min="0"
-                      value={participantCapacity}
-                      onChange={(e) => setParticipantCapacity(e.target.value)}
-                      data-testid="input-event-participant-capacity"
-                      placeholder="Enter participant capacity"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="volunteerCapacity">Volunteer Capacity</Label>
-                    <Input 
-                      id="volunteerCapacity" 
-                      type="number" 
-                      min="0"
-                      value={volunteerCapacity}
-                      onChange={(e) => setVolunteerCapacity(e.target.value)}
-                      data-testid="input-event-volunteer-capacity"
-                      placeholder="Enter volunteer capacity"
-                    />
-                  </div>
-                </div>
-              )}
+
               <div className="space-y-2">
-                <Label htmlFor="googleFormUrl">Google Form URL (Optional)</Label>
+                <Label htmlFor="locationAddress">Address</Label>
+                <Input 
+                  id="locationAddress" 
+                  required 
+                  value={locationAddress}
+                  onChange={(e) => setLocationAddress(e.target.value)}
+                  data-testid="input-event-location-address"
+                  placeholder="e.g., 1234 Cherry St, Denver, CO 80220"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="googleFormUrl">Google Form URL {requiresRegistration && <span className="text-red-500">*</span>}</Label>
                 <Input 
                   id="googleFormUrl" 
-                  name="googleFormUrl" 
                   type="url"
-                  defaultValue={editingEvent?.googleFormUrl || ""}
+                  value={googleFormUrl}
+                  onChange={(e) => handleGoogleFormUrlChange(e.target.value)}
                   data-testid="input-event-google-form-url"
                   placeholder="https://forms.google.com/..."
                 />
@@ -671,23 +682,25 @@ export default function AdminEvents() {
               <div className="flex items-center gap-2">
                 <Switch 
                   id="requiresRegistration" 
-                  name="requiresRegistration" 
                   checked={requiresRegistration}
-                  onCheckedChange={setRequiresRegistration}
-                  defaultChecked={editingEvent?.requiresRegistration ?? true}
+                  onCheckedChange={(value) => {
+                    // If URL exists and they try to turn off registration, prevent it
+                    if (googleFormUrl.trim() && !value) {
+                      toast({ 
+                        title: "Cannot disable registration", 
+                        description: "Registration is required when a Google Form URL is provided.",
+                        variant: "destructive" 
+                      });
+                      return;
+                    }
+                    setRequiresRegistration(value);
+                  }}
+                  disabled={!!googleFormUrl.trim()}
                   data-testid="switch-event-requires-registration"
                 />
-                <Label htmlFor="requiresRegistration">Requires Registration</Label>
+                <Label htmlFor="requiresRegistration">Requires Registration {googleFormUrl.trim() && <span className="text-xs text-muted-foreground">(locked - URL provided)</span>}</Label>
               </div>
-              <div className="flex items-center gap-2">
-                <Switch 
-                  id="isFull" 
-                  checked={isFull}
-                  onCheckedChange={setIsFull}
-                  data-testid="switch-event-is-full"
-                />
-                <Label htmlFor="isFull">Mark as Full (hides registration button)</Label>
-              </div>
+
               <div className="space-y-2">
                 <Label>Event Image</Label>
                 <ImageUpload onUpload={setImageUrl} setUploading={setImageUploading} />
@@ -750,7 +763,7 @@ export default function AdminEvents() {
                 <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">{event.location}</span>
+                    <span className="text-muted-foreground">{getLocationDisplay(event.location)}</span>
                   </div>
                   {event.capacity && (
                     <div className="flex items-center justify-between">

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import type { Trip } from "@shared/schema";
 import { useState } from "react";
+import { parseAdditionalDates } from "@/lib/additional-dates";
 
 
 
@@ -35,6 +36,28 @@ function formatTime(timeString: string): string {
   }
 }
 
+function getLocationNameAndAddress(location: string): { name: string; address: string } {
+  if (!location) return { name: '', address: '' };
+  try {
+    const data = JSON.parse(location);
+    return { name: data.name || '', address: data.address || '' };
+  } catch {
+    // Fallback for old format
+    return { name: location, address: '' };
+  }
+}
+
+function getLocationSearchText(location: string): string {
+  if (!location) return '';
+  try {
+    const data = JSON.parse(location);
+    return `${data.name} ${data.address}`.toLowerCase();
+  } catch {
+    // Fallback for old format
+    return location.toLowerCase();
+  }
+}
+
 // Main component for displaying and searching trips
 export default function Trips() {
   // State for search input
@@ -54,7 +77,7 @@ export default function Trips() {
   const filteredTrips = activeTrips.filter(trip =>
     trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     trip.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    trip.destination.toLowerCase().includes(searchTerm.toLowerCase())
+    getLocationSearchText(trip.destination).includes(searchTerm.toLowerCase())
   );
 
   // Render trips page layout
@@ -109,7 +132,7 @@ export default function Trips() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredTrips.map((trip) => (
                   <Link key={trip.id} href={`/trips/${trip.id}`}>
-                    <Card className="group h-full hover-elevate cursor-pointer transition-all duration-200">
+                    <Card className="group h-full flex flex-col hover-elevate cursor-pointer transition-all duration-200">
                       {trip.imageUrl ? (
                         <div className="h-48 rounded-t-lg overflow-hidden flex items-center justify-center bg-white" style={{ minHeight: 192 }}>
                           <img
@@ -135,27 +158,59 @@ export default function Trips() {
                         </CardTitle>
                         <CardDescription className="line-clamp-2">{trip.description}</CardDescription>
                       </CardHeader>
-                      <CardContent className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          <span>{formatDate(trip.date)}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="h-4 w-4" />
-                          <span className="military-time">{formatTime(trip.time)} - {formatTime(trip.endTime)}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <MapPin className="h-4 w-4" />
-                          <span>{trip.destination}</span>
-                        </div>
-                        <div className="flex items-center justify-between pt-2">
-                          <div className="flex items-center gap-2 text-sm">
-                            <Users className="h-4 w-4 text-primary" />
-                            <span className="text-primary font-medium">
-                              {trip.capacity - trip.registeredCount} spots left
+                      <CardContent className="flex flex-col flex-grow space-y-0">
+                        <div className="space-y-2 flex-grow">
+                          <div className="h-6 flex items-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="h-5 w-5" />
+                            <span>
+                              {trip.additionalDates && parseAdditionalDates(trip.additionalDates).length > 0
+                                ? "Multiple dates"
+                                : formatDate(trip.date)}
                             </span>
                           </div>
-                          <Button size="sm" variant="outline" data-testid={`button-view-trip-${trip.id}`}>
+                          <div className="h-6 flex items-center gap-2 text-sm text-muted-foreground">
+                            <Clock className="h-5 w-5" />
+                            <span>
+                              {trip.additionalDates && parseAdditionalDates(trip.additionalDates).length > 0
+                                ? (() => {
+                                    const dates = parseAdditionalDates(trip.additionalDates);
+                                    // Check if there are multiple different times
+                                    const times = dates.map(d => {
+                                      if (d.startTime && d.endTime) {
+                                        return `${formatTime(d.startTime)}-${formatTime(d.endTime)}`;
+                                      } else if (d.time) {
+                                        return formatTime(d.time);
+                                      }
+                                      return null;
+                                    }).filter(Boolean);
+                                    
+                                    // Check for unique times
+                                    const uniqueTimes = [...new Set(times)];
+                                    
+                                    if (uniqueTimes.length > 1) {
+                                      return "Times vary";
+                                    } else if (uniqueTimes.length === 1) {
+                                      return uniqueTimes[0];
+                                    } else if (trip.startTime && trip.endTime) {
+                                      return `${formatTime(trip.startTime)} - ${formatTime(trip.endTime)}`;
+                                    }
+                                    return '-';
+                                  })()
+                                : trip.startTime && trip.endTime ? `${formatTime(trip.startTime)} - ${formatTime(trip.endTime)}` : '-'}
+                            </span>
+                          </div>
+                          <div className="h-12 flex gap-2 text-sm text-muted-foreground">
+                            <MapPin className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                            <div className="flex flex-col min-w-0 max-h-12">
+                              <span className="line-clamp-1">{getLocationNameAndAddress(trip.destination).name}</span>
+                              {getLocationNameAndAddress(trip.destination).address && (
+                                <span className="text-xs line-clamp-1 overflow-hidden">{getLocationNameAndAddress(trip.destination).address}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-2 pt-2 border-t mt-auto">
+                          <Button className="w-full bg-[#c73e1d]/90 hover:bg-[#c73e1d] border-[#c73e1d]/90 text-white" size="lg" data-testid={`button-view-trip-${trip.id}`}>
                             View Details
                           </Button>
                         </div>

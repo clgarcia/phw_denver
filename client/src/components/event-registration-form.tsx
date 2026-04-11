@@ -139,7 +139,7 @@ export function EventRegistrationForm({ eventId, onSuccess }: EventRegistrationF
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Time:</span>
-                <span className="font-medium military-time">{formatTime(event.time)}</span>
+                <span className="font-medium">{formatTime(event.time)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Location:</span>
@@ -222,7 +222,7 @@ export function EventRegistrationForm({ eventId, onSuccess }: EventRegistrationF
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Time:</span>
-              <span className="font-medium military-time">{formatTime(event.time)}</span>
+              <span className="font-medium">{formatTime(event.time)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Location:</span>

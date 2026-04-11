@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { Calendar, Clock, MapPin, Users, ArrowLeft, CheckCircle } from "lucide-react";
+import { Calendar, Clock, MapPin, Users, ArrowLeft, CheckCircle, ExternalLink } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { Event } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,19 @@ export default function EventDetail() {
   const { data: event, isLoading, error } = useQuery<Event>({
     queryKey: ["/api/events", id],
   });
+
+  // Parse location JSON format
+  const getLocationDisplay = () => {
+    if (!event?.location) return { name: "", address: "" };
+    try {
+      return JSON.parse(event.location);
+    } catch {
+      // Fallback for old format
+      return { name: event.location, address: "" };
+    }
+  };
+
+  const locationData = getLocationDisplay();
 
   const spotsLeft = event ? (event.isFull ? 0 : event.capacity - event.registeredCount) : 0;
   const registeredDisplay = event ? (event.isFull ? event.capacity : event.registeredCount) : 0;
@@ -59,8 +72,8 @@ export default function EventDetail() {
           </Link>
 
           {isLoading ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2">
+            <div className="grid grid-cols-1 gap-8">
+              <div>
                 <Card className="animate-pulse">
                   <div className="h-64 bg-muted rounded-t-lg" />
                   <CardHeader>
@@ -94,8 +107,8 @@ export default function EventDetail() {
               </Link>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 gap-8 max-w-4xl mx-auto w-full">
+              <div className="space-y-6">
                 <Card>
                   {event.imageUrl ? (
                     <div className="h-64 rounded-t-lg overflow-hidden flex items-center justify-center bg-black/5">
@@ -124,7 +137,6 @@ export default function EventDetail() {
                         <CardTitle className="text-2xl md:text-3xl" data-testid="text-event-title">
                           {event.title}
                         </CardTitle>
-                        <CardDescription className="mt-2">{getEventDateDisplay(event).display}</CardDescription>
                       </div>
                       <Badge variant={event.isActive ? "default" : "secondary"}>
                         {event.isActive ? "Active" : "Inactive"}
@@ -141,9 +153,31 @@ export default function EventDetail() {
 
                     <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
                       <MapPin className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Location</p>
-                        <p className="font-medium">{event.location}</p>
+                      <div className="flex-1">
+                        <p className="font-medium">{locationData.name}</p>
+                        <p className="text-sm text-muted-foreground">{locationData.address}</p>
+                      </div>
+                      <div className="flex gap-2 flex-col sm:flex-row">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(`${locationData.name} ${locationData.address}`)}`, '_blank')}
+                          className="text-xs"
+                          data-testid="button-google-maps-event"
+                        >
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          Google Maps
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(`https://maps.apple.com/?address=${encodeURIComponent(`${locationData.name} ${locationData.address}`)}`, '_blank')}
+                          className="text-xs"
+                          data-testid="button-apple-maps-event"
+                        >
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          Apple Maps
+                        </Button>
                       </div>
                     </div>
 
@@ -162,13 +196,13 @@ export default function EventDetail() {
                           {event.dateRangeStartTime && (
                             <div className="p-3 rounded-lg bg-muted/50">
                               <p className="text-xs text-muted-foreground mb-1">Start Time</p>
-                              <p className="font-medium text-sm military-time">{formatTime(event.dateRangeStartTime)}</p>
+                              <p className="font-medium text-sm">{formatTime(event.dateRangeStartTime)}</p>
                             </div>
                           )}
                           {event.dateRangeEndTime && (
                             <div className="p-3 rounded-lg bg-muted/50">
                               <p className="text-xs text-muted-foreground mb-1">End Time</p>
-                              <p className="font-medium text-sm military-time">{formatTime(event.dateRangeEndTime)}</p>
+                              <p className="font-medium text-sm">{formatTime(event.dateRangeEndTime)}</p>
                             </div>
                           )}
                         </div>
@@ -183,11 +217,11 @@ export default function EventDetail() {
                                 <div>
                                   <p className="text-sm font-medium">{formatDateUtil(dateObj.date)}</p>
                                   {dateObj.startTime && dateObj.endTime ? (
-                                    <p className="font-medium military-time text-xs mt-1">{formatTime(dateObj.startTime)} - {formatTime(dateObj.endTime)}</p>
+                                    <p className="font-medium text-xs mt-1">{formatTime(dateObj.startTime)} - {formatTime(dateObj.endTime)}</p>
                                   ) : dateObj.startTime ? (
-                                    <p className="font-medium military-time text-xs mt-1">{formatTime(dateObj.startTime)}</p>
+                                    <p className="font-medium text-xs mt-1">{formatTime(dateObj.startTime)}</p>
                                   ) : dateObj.time ? (
-                                    <p className="font-medium military-time text-xs mt-1">{formatTime(dateObj.time)}</p>
+                                    <p className="font-medium text-xs mt-1">{formatTime(dateObj.time)}</p>
                                   ) : null}
                                 </div>
                               </div>
@@ -206,7 +240,7 @@ export default function EventDetail() {
                           {(event.startTime || event.endTime) && (
                             <div className="p-3 rounded-lg bg-muted/50">
                               <p className="text-xs text-muted-foreground mb-1">Time</p>
-                              <p className="font-medium text-sm military-time">
+                              <p className="font-medium text-sm">
                                 {event.startTime && event.endTime 
                                   ? `${formatTime(event.startTime)} - ${formatTime(event.endTime)}`
                                   : event.startTime 
@@ -222,102 +256,21 @@ export default function EventDetail() {
                 </Card>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-6 max-w-4xl mx-auto w-full">
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">Registration</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {!event.requiresRegistration ? (
-                      <div className="p-6 text-center rounded-lg bg-muted/50">
-                        <CheckCircle className="h-12 w-12 text-primary mx-auto mb-3" />
-                        <p className="font-medium text-lg">Registration Not Required</p>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          This event is open to all. No registration needed.
-                        </p>
-                      </div>
-                    ) : event.capacity !== null && event.capacity !== undefined || event.volunteerCapacity !== null && event.volunteerCapacity !== undefined ? (
-                      <>
-                        <div className="space-y-3">
-                          {event.capacity !== null && event.capacity !== undefined && (
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="text-muted-foreground">Participant Capacity</span>
-                                <span className="font-medium">{registeredDisplay} / {event.capacity}</span>
-                              </div>
-                              <Progress value={fillPercentage} className="h-2" />
-                            </div>
-                          )}
-                          {event.volunteerCapacity !== null && event.volunteerCapacity !== undefined && (
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="text-muted-foreground">Volunteer Capacity</span>
-                                <span className="font-medium">{event.isFull ? event.volunteerCapacity : 0} / {event.volunteerCapacity}</span>
-                              </div>
-                              <Progress value={event.isFull ? 100 : 0} className="h-2" />
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
-                          <Users className="h-5 w-5 text-primary" />
-                          <div>
-                            <p className="font-medium text-primary">{spotsLeft} participant spots remaining</p>
-                            <p className="text-sm text-muted-foreground">
-                              {fillPercentage > 80 ? "Filling up fast!" : "Spots available"}
-                            </p>
-                          </div>
-                        </div>
-
-                        {spotsLeft > 0 && !event.isFull ? (
-                          <Button 
-                            className="w-full" 
-                            size="lg" 
-                            data-testid="button-register-event"
-                            onClick={handleRegisterClick}
-                          >
-                            Register for This Event
-                          </Button>
-                        ) : event.volunteerCapacity && event.volunteerCapacity > 0 && !event.isFull ? (
-                          <Button 
-                            className="w-full" 
-                            size="lg" 
-                            data-testid="button-register-event"
-                            onClick={handleRegisterClick}
-                          >
-                            Register for This Event
-                          </Button>
-                        ) : event.isFull ? (
-                          <Button className="w-full" size="lg" disabled>
-                            Event Full
-                          </Button>
-                        ) : event.capacity === 0 && (!event.volunteerCapacity || event.volunteerCapacity === 0) ? (
-                          <Button className="w-full" size="lg" disabled>
-                            Not Accepting Registrations
-                          </Button>
-                        ) : (
-                          <Button className="w-full" size="lg" disabled>
-                            Event Full
-                          </Button>
-                        )}
-                      </>
-                    ) : (
-                      <div className="p-6 text-center rounded-lg bg-muted/50">
-                        <Users className="h-12 w-12 text-primary mx-auto mb-3" />
-                        <p className="font-medium text-lg">Registration Available</p>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          Unlimited spaces - register now!
-                        </p>
-                        <Button 
-                          className="w-full mt-4" 
-                          size="lg" 
-                          data-testid="button-register-event"
-                          onClick={handleRegisterClick}
-                        >
-                          Register for This Event
-                        </Button>
-                      </div>
-                    )}
+                    <p className="text-muted-foreground">Hurry, spots fill up fast!!</p>
+                    <Button 
+                      className="w-full" 
+                      size="lg" 
+                      data-testid="button-register-event"
+                      onClick={handleRegisterClick}
+                    >
+                      Register for This Event
+                    </Button>
                   </CardContent>
                 </Card>
 
@@ -334,11 +287,11 @@ export default function EventDetail() {
                         </li>
                         <li className="flex items-start gap-3">
                           <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
-                          <span className="text-sm">Confirmation email sent immediately</span>
+                          <span className="text-sm">Quick setup - start immediately after registration</span>
                         </li>
                         <li className="flex items-start gap-3">
                           <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
-                          <span className="text-sm">Reminder before the event</span>
+                          <span className="text-sm">Connect with our community of participants</span>
                         </li>
                       </ul>
                     </CardContent>

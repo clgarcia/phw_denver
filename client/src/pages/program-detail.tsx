@@ -3,10 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { Calendar, Users, ArrowLeft, Navigation, CheckCircle } from "lucide-react";
+import { Calendar, Users, ArrowLeft, Navigation, CheckCircle, MapPin, ExternalLink } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { Program } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ProgramRegistrationForm } from "@/components/program-registration-form";
 import { PinVerificationModal } from "@/components/pin-verification-modal";
@@ -22,6 +23,19 @@ export default function ProgramDetail() {
   const { data: program, isLoading, error } = useQuery<Program>({
     queryKey: ["/api/programs", id],
   });
+
+  // Parse location JSON format
+  const getLocationDisplay = () => {
+    if (!program?.location) return { name: "", address: "" };
+    try {
+      return JSON.parse(program.location);
+    } catch {
+      // Fallback for old format
+      return { name: program.location, address: "" };
+    }
+  };
+
+  const locationData = getLocationDisplay();
 
   const spotsLeft = program ? (program.isFull ? 0 : program.capacity - program.registeredCount) : 0;
   const registeredDisplay = program ? (program.isFull ? program.capacity : program.registeredCount) : 0;
@@ -56,8 +70,8 @@ export default function ProgramDetail() {
           </Link>
 
           {isLoading ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2">
+            <div className="grid grid-cols-1 gap-8">
+              <div>
                 <Card className="animate-pulse">
                   <div className="h-64 bg-muted rounded-t-lg" />
                   <CardHeader>
@@ -81,7 +95,7 @@ export default function ProgramDetail() {
             </div>
           ) : error || !program ? (
             <Card className="p-12 text-center max-w-md mx-auto">
-              <Navigation className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">Program not found</h3>
               <p className="text-muted-foreground mb-4">
                 The program you're looking for doesn't exist or has been removed.
@@ -91,8 +105,8 @@ export default function ProgramDetail() {
               </Link>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 gap-8 max-w-4xl mx-auto w-full">
+              <div className="space-y-6">
                 <Card>
                   {program.imageUrl ? (
                     <div className="h-64 rounded-t-lg overflow-hidden flex items-center justify-center bg-black/5">
@@ -111,8 +125,8 @@ export default function ProgramDetail() {
                       </div>
                     </div>
                   ) : (
-                    <div className="h-64 bg-gradient-to-br from-blue-400/20 to-cyan-400/20 rounded-t-lg flex items-center justify-center">
-                      <Navigation className="h-24 w-24 text-blue-400/40" />
+                    <div className="h-64 bg-gradient-to-br from-primary/20 to-accent/20 rounded-t-lg flex items-center justify-center">
+                      <Calendar className="h-24 w-24 text-primary/40" />
                     </div>
                   )}
                   <CardHeader>
@@ -121,9 +135,6 @@ export default function ProgramDetail() {
                         <CardTitle className="text-2xl md:text-3xl" data-testid="text-program-title">
                           {program.name}
                         </CardTitle>
-                        <CardDescription className="mt-2">
-                          {formatDate(program.startDate)} - {formatDate(program.endDate)}
-                        </CardDescription>
                       </div>
                       <Badge variant={program.isActive ? "default" : "secondary"}>
                         {program.isActive ? "Active" : "Inactive"}
@@ -137,107 +148,154 @@ export default function ProgramDetail() {
                         {program.description}
                       </p>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+                    {locationData.name && (
                       <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                        <Calendar className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Start Date</p>
-                          <p className="font-medium">{formatDate(program.startDate)}</p>
+                        <MapPin className="h-5 w-5 text-primary" />
+                        <div className="flex-1">
+                          <p className="font-medium">{locationData.name}</p>
+                          <p className="text-sm text-muted-foreground">{locationData.address}</p>
+                        </div>
+                        <div className="flex gap-2 flex-col sm:flex-row">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(`${locationData.name} ${locationData.address}`)}`, '_blank')}
+                            className="text-xs"
+                            data-testid="button-google-maps-program"
+                          >
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            Google Maps
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => window.open(`https://maps.apple.com/?address=${encodeURIComponent(`${locationData.name} ${locationData.address}`)}`, '_blank')}
+                            className="text-xs"
+                            data-testid="button-apple-maps-program"
+                          >
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            Apple Maps
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                        <Calendar className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">End Date</p>
-                          <p className="font-medium">{formatDate(program.endDate)}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                        <Users className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Capacity</p>
-                          <p className="font-medium">{program.registeredCount} / {program.capacity}</p>
-                        </div>
-                      </div>
-                    </div>
+                    )}
 
                     {program.dateRangeMode && program.dateRangeStart && program.dateRangeEnd ? (
-                      <div className="pt-4 border-t">
-                        <h4 className="font-semibold mb-3 text-sm">Program Date Range</h4>
-                        <div className="p-3 rounded-lg bg-muted/50">
-                          <p className="text-sm text-muted-foreground">
-                            {formatDate(program.dateRangeStart)} - {formatDate(program.dateRangeEnd)}
-                          </p>
+                      <div className="pt-4 border-t space-y-3">
+                        <h4 className="font-semibold text-sm">Date Range Details</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {program.dateRangeStart === program.dateRangeEnd ? (
+                            <div className="p-3 rounded-lg bg-muted/50">
+                              <p className="text-xs text-muted-foreground mb-1">Date</p>
+                              <p className="font-medium text-sm">{formatDate(program.dateRangeStart)}</p>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="p-3 rounded-lg bg-muted/50">
+                                <p className="text-xs text-muted-foreground mb-1">Start Date</p>
+                                <p className="font-medium text-sm">{formatDate(program.dateRangeStart)}</p>
+                              </div>
+                              <div className="p-3 rounded-lg bg-muted/50">
+                                <p className="text-xs text-muted-foreground mb-1">End Date</p>
+                                <p className="font-medium text-sm">{formatDate(program.dateRangeEnd)}</p>
+                              </div>
+                            </>
+                          )}
                           {program.dateRangeStartTime && (
-                            <p className="font-medium military-time text-sm mt-1">
-                              {formatTime(program.dateRangeStartTime)} - {formatTime(program.dateRangeEndTime || program.dateRangeStartTime)}
-                            </p>
+                            <div className="p-3 rounded-lg bg-muted/50">
+                              <p className="text-xs text-muted-foreground mb-1">Start Time</p>
+                              <p className="font-medium text-sm">{formatTime(program.dateRangeStartTime)}</p>
+                            </div>
+                          )}
+                          {program.dateRangeEndTime && (
+                            <div className="p-3 rounded-lg bg-muted/50">
+                              <p className="text-xs text-muted-foreground mb-1">End Time</p>
+                              <p className="font-medium text-sm">{formatTime(program.dateRangeEndTime)}</p>
+                            </div>
                           )}
                         </div>
                       </div>
                     ) : program.additionalDates && parseAdditionalDates(program.additionalDates).length > 0 ? (
                       <div className="pt-4 border-t">
-                        <h4 className="font-semibold mb-3 text-sm">Additional Dates</h4>
+                        <h4 className="font-semibold mb-3 text-sm">Multiple Program Dates</h4>
                         <div className="space-y-2">
                           {parseAdditionalDates(program.additionalDates).map((dateObj, index) => (
                             <div key={index} className="p-3 rounded-lg bg-muted/50">
-                              <p className="text-sm text-muted-foreground">Date {index + 1}</p>
-                              <p className="font-medium">{formatDate(dateObj.date)}</p>
-                              {dateObj.startTime && dateObj.endTime ? (
-                                <p className="font-medium military-time text-sm mt-1">{formatTime(dateObj.startTime)} - {formatTime(dateObj.endTime)}</p>
-                              ) : dateObj.startTime ? (
-                                <p className="font-medium military-time text-sm mt-1">{formatTime(dateObj.startTime)}</p>
-                              ) : dateObj.time ? (
-                                <p className="font-medium military-time text-sm mt-1">{formatTime(dateObj.time)}</p>
-                              ) : null}
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium">{formatDate(dateObj.date)}</p>
+                                  {dateObj.startTime && dateObj.endTime ? (
+                                    <p className="font-medium text-xs mt-1">{formatTime(dateObj.startTime)} - {formatTime(dateObj.endTime)}</p>
+                                  ) : dateObj.startTime ? (
+                                    <p className="font-medium text-xs mt-1">{formatTime(dateObj.startTime)}</p>
+                                  ) : dateObj.time ? (
+                                    <p className="font-medium text-xs mt-1">{formatTime(dateObj.time)}</p>
+                                  ) : null}
+                                </div>
+                              </div>
                             </div>
                           ))}
+                        </div>
+                      </div>
+                    ) : program.startDate ? (
+                      <div className="pt-4 border-t space-y-3">
+                        <h4 className="font-semibold text-sm">Program Details</h4>
+                        <div className="space-y-3">
+                          {program.startDate === program.endDate || !program.endDate ? (
+                            <div className="p-3 rounded-lg bg-muted/50">
+                              <p className="text-xs text-muted-foreground mb-1">Date</p>
+                              <p className="font-medium text-sm">{formatDate(program.startDate)}</p>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="p-3 rounded-lg bg-muted/50">
+                                <p className="text-xs text-muted-foreground mb-1">Start Date</p>
+                                <p className="font-medium text-sm">{formatDate(program.startDate)}</p>
+                              </div>
+                              <div className="p-3 rounded-lg bg-muted/50">
+                                <p className="text-xs text-muted-foreground mb-1">End Date</p>
+                                <p className="font-medium text-sm">{formatDate(program.endDate)}</p>
+                              </div>
+                            </>
+                          )}
+                          {(program.startTime || program.endTime) && (
+                            <div className="p-3 rounded-lg bg-muted/50">
+                              <p className="text-xs text-muted-foreground mb-1">Time</p>
+                              <p className="font-medium text-sm">
+                                {program.startTime && program.endTime 
+                                  ? `${formatTime(program.startTime)} - ${formatTime(program.endTime)}`
+                                  : program.startTime 
+                                  ? formatTime(program.startTime)
+                                  : formatTime(program.endTime || '')}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ) : null}
                   </CardContent>
                 </Card>
               </div>
-              <div className="space-y-6">
+
+              <div className="space-y-6 max-w-4xl mx-auto w-full">
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">Registration</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Capacity</span>
-                        <span className="font-medium">{registeredDisplay} / {program.capacity}</span>
-                      </div>
-                      <div className="h-2 rounded bg-muted overflow-hidden">
-                        <div className="h-2 rounded bg-primary" style={{ width: `${fillPercentage}%` }} />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
-                      <Users className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="font-medium text-primary">{spotsLeft} spots remaining</p>
-                        <p className="text-sm text-muted-foreground">
-                          {fillPercentage > 80 ? "Filling up fast!" : "Spots available"}
-                        </p>
-                      </div>
-                    </div>
-                    {program.capacity - program.registeredCount > 0 && !program.isFull ? (
-                      <Button 
-                        className="w-full" 
-                        size="lg" 
-                        data-testid="button-register-program"
-                        onClick={handleRegisterClick}
-                      >
-                        Register for This Program
-                      </Button>
-                    ) : (
-                      <Button className="w-full" size="lg" disabled>
-                        Program Full
-                      </Button>
-                    )}
+                    <p className="text-muted-foreground">Hurry, spots fill up fast!!</p>
+                    <Button 
+                      className="w-full" 
+                      size="lg" 
+                      data-testid="button-register-program"
+                      onClick={handleRegisterClick}
+                    >
+                      Register for This Program
+                    </Button>
                   </CardContent>
                 </Card>
+
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">What to Expect</CardTitle>
@@ -250,11 +308,11 @@ export default function ProgramDetail() {
                       </li>
                       <li className="flex items-start gap-3">
                         <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
-                        <span className="text-sm">Confirmation email sent immediately</span>
+                        <span className="text-sm">Access program materials and updates</span>
                       </li>
                       <li className="flex items-start gap-3">
                         <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
-                        <span className="text-sm">Reminder before the program</span>
+                        <span className="text-sm">Join our community of participants</span>
                       </li>
                     </ul>
                   </CardContent>

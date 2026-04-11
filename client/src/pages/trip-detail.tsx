@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { Calendar, Clock, MapPin, Users, ArrowLeft, Navigation, Gauge } from "lucide-react";
+import { Calendar, Clock, MapPin, Users, ArrowLeft, Navigation, Gauge, ExternalLink, CheckCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { Trip } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
@@ -30,10 +30,23 @@ export default function TripDetail() {
     queryKey: ["/api/trips", id],
   });
 
-  // Calculate spots left and fill percentage for the trip
-  const spotsLeft = trip ? (trip.isFull ? 0 : trip.capacity - trip.registeredCount) : 0;
-  const registeredDisplay = trip ? (trip.isFull ? trip.capacity : trip.registeredCount) : 0;
-  const fillPercentage = trip ? (trip.isFull ? 100 : (trip.registeredCount / trip.capacity) * 100) : 0;
+  // Helper to parse location JSON format
+  const parseLocation = (location: string | undefined): { name: string; address: string } => {
+    if (!location) return { name: "", address: "" };
+    try {
+      return JSON.parse(location);
+    } catch {
+      // Fallback - it's just a plain string
+      return { name: location, address: "" };
+    }
+  };
+
+  const destinationData = parseLocation(trip?.destination);
+
+  // Calculate registration display for the trip
+  const registeredDisplay = trip ? trip.registeredCount : 0;
+  const spotsLeft = 0; // No longer tracking capacity
+  const fillPercentage = 0; // No longer tracking capacity
 
   const handleRegisterClick = () => {
     if (trip?.googleFormUrl) {
@@ -67,8 +80,8 @@ export default function TripDetail() {
           </Link>
 
           {isLoading ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2">
+            <div className="space-y-6 max-w-4xl mx-auto w-full">
+              <div>
                 <Card className="animate-pulse">
                   <div className="h-64 bg-muted rounded-t-lg" />
                   <CardHeader>
@@ -102,8 +115,8 @@ export default function TripDetail() {
               </Link>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-6">
+            <div className="space-y-6 max-w-4xl mx-auto w-full">
+              <div className="space-y-6">
                 <Card>
                   {trip.imageUrl ? (
                     <div className="h-64 rounded-t-lg overflow-hidden flex items-center justify-center bg-white">
@@ -124,9 +137,6 @@ export default function TripDetail() {
                         <CardTitle className="text-2xl md:text-3xl" data-testid="text-trip-title">
                           {trip.name}
                         </CardTitle>
-                        <CardDescription className="mt-2">
-                          {formatDate(trip.date)} - {formatDate(trip.endDate)} • <span className="military-time">{formatTime(trip.time)} - {formatTime(trip.endTime)}</span>
-                        </CardDescription>
                       </div>
                       <Badge variant={trip.isActive ? "default" : "secondary"}>
                         {trip.isActive ? "Active" : "Inactive"}
@@ -141,87 +151,155 @@ export default function TripDetail() {
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                        <Calendar className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Start Date</p>
-                          <p className="font-medium">{formatDate(trip.date)}</p>
-                        </div>
+
+
+                    <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 flex-wrap">
+                      <Navigation className="h-5 w-5 text-primary flex-shrink-0" />
+                      <div>
+                        <p className="font-medium">{destinationData.name || "Destination"}</p>
+                        {destinationData.address && <p className="text-sm text-muted-foreground">{destinationData.address}</p>}
                       </div>
-                      <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                        <Calendar className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">End Date</p>
-                          <p className="font-medium">{formatDate(trip.endDate)}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                        <Clock className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Time</p>
-                          <p className="font-medium military-time">{formatTime(trip.time)} - {formatTime(trip.endTime)}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                        <MapPin className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Meetup Location</p>
-                          <p className="font-medium">{trip.meetupLocation}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                        <Navigation className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Destination</p>
-                          <p className="font-medium">{trip.destination}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                        <Calendar className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Duration</p>
-                          <p className="font-medium">{trip.durationDays}d / {trip.durationNights}n</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                        <Gauge className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Difficulty</p>
-                          <p className="font-medium">{trip.difficultyLevel}</p>
-                        </div>
+                      <div className="flex gap-2 flex-col sm:flex-row ml-auto">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(destinationData.address)}`, '_blank')}
+                          className="text-xs"
+                          data-testid="button-google-maps-destination"
+                        >
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          Google Maps
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(`https://maps.apple.com/?address=${encodeURIComponent(destinationData.address)}`, '_blank')}
+                          className="text-xs"
+                          data-testid="button-apple-maps-destination"
+                        >
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          Apple Maps
+                        </Button>
                       </div>
                     </div>
 
-                    {trip.dateRangeMode && trip.dateRangeStart && trip.dateRangeEnd ? (
-                      <div className="pt-4 border-t">
-                        <h4 className="font-semibold mb-3 text-sm">Trip Date Range</h4>
-                        <div className="p-3 rounded-lg bg-muted/50">
-                          <p className="text-sm text-muted-foreground">
-                            {formatDate(trip.dateRangeStart)} - {formatDate(trip.dateRangeEnd)}
-                          </p>
-                          {trip.dateRangeStartTime && (
-                            <p className="font-medium military-time text-sm mt-1">
-                              {formatTime(trip.dateRangeStartTime)} - {formatTime(trip.dateRangeEndTime || trip.dateRangeStartTime)}
-                            </p>
+                    {!trip.dateRangeMode ? (
+                      <div className="pt-4 border-t space-y-3">
+                        <h4 className="font-semibold text-sm">Trip Details</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {trip.date === trip.endDate ? (
+                            <div className="p-3 rounded-lg bg-muted/50">
+                              <p className="text-xs text-muted-foreground mb-1">Date</p>
+                              <p className="font-medium text-sm">{formatDate(trip.date)}</p>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="p-3 rounded-lg bg-muted/50">
+                                <p className="text-xs text-muted-foreground mb-1">Start Date</p>
+                                <p className="font-medium text-sm">{formatDate(trip.date)}</p>
+                              </div>
+                              <div className="p-3 rounded-lg bg-muted/50">
+                                <p className="text-xs text-muted-foreground mb-1">End Date</p>
+                                <p className="font-medium text-sm">{formatDate(trip.endDate)}</p>
+                              </div>
+                            </>
                           )}
+                          {trip.startTime && trip.endTime ? (
+                            <div className="p-3 rounded-lg bg-muted/50">
+                              <p className="text-xs text-muted-foreground mb-1">Time</p>
+                              <p className="font-medium text-sm">{formatTime(trip.startTime)} - {formatTime(trip.endTime)}</p>
+                            </div>
+                          ) : trip.startTime ? (
+                            <div className="p-3 rounded-lg bg-muted/50">
+                              <p className="text-xs text-muted-foreground mb-1">Start Time</p>
+                              <p className="font-medium text-sm">{formatTime(trip.startTime)}</p>
+                            </div>
+                          ) : null}
+                          <div className="p-3 rounded-lg bg-muted/50">
+                            <p className="text-xs text-muted-foreground mb-1">Duration</p>
+                            <p className="font-medium text-sm">{trip.durationDays}d / {trip.durationNights}n</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-muted/50">
+                            <p className="text-xs text-muted-foreground mb-1">Difficulty</p>
+                            <p className="font-medium text-sm">{trip.difficultyLevel}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {trip.dateRangeMode && trip.dateRangeStart && trip.dateRangeEnd ? (
+                      <div className="pt-4 border-t space-y-3">
+                        <h4 className="font-semibold text-sm">Date Range Details</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {trip.dateRangeStart === trip.dateRangeEnd ? (
+                            <div className="p-3 rounded-lg bg-muted/50">
+                              <p className="text-xs text-muted-foreground mb-1">Date</p>
+                              <p className="font-medium text-sm">{formatDate(trip.dateRangeStart)}</p>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="p-3 rounded-lg bg-muted/50">
+                                <p className="text-xs text-muted-foreground mb-1">Start Date</p>
+                                <p className="font-medium text-sm">{formatDate(trip.dateRangeStart)}</p>
+                              </div>
+                              <div className="p-3 rounded-lg bg-muted/50">
+                                <p className="text-xs text-muted-foreground mb-1">End Date</p>
+                                <p className="font-medium text-sm">{formatDate(trip.dateRangeEnd)}</p>
+                              </div>
+                            </>
+                          )}
+                          {trip.dateRangeStartTime && (
+                            <div className="p-3 rounded-lg bg-muted/50">
+                              <p className="text-xs text-muted-foreground mb-1">Start Time</p>
+                              <p className="font-medium text-sm">{formatTime(trip.dateRangeStartTime)}</p>
+                            </div>
+                          )}
+                          {trip.dateRangeEndTime && (
+                            <div className="p-3 rounded-lg bg-muted/50">
+                              <p className="text-xs text-muted-foreground mb-1">End Time</p>
+                              <p className="font-medium text-sm">{formatTime(trip.dateRangeEndTime)}</p>
+                            </div>
+                          )}
+                          <div className="p-3 rounded-lg bg-muted/50">
+                            <p className="text-xs text-muted-foreground mb-1">Duration</p>
+                            <p className="font-medium text-sm">{trip.durationDays}d / {trip.durationNights}n</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-muted/50">
+                            <p className="text-xs text-muted-foreground mb-1">Difficulty</p>
+                            <p className="font-medium text-sm">{trip.difficultyLevel}</p>
+                          </div>
                         </div>
                       </div>
                     ) : trip.additionalDates && parseAdditionalDates(trip.additionalDates).length > 0 ? (
                       <div className="pt-4 border-t">
-                        <h4 className="font-semibold mb-3 text-sm">Additional Trip Dates</h4>
+                        <h4 className="font-semibold mb-3 text-sm">Multiple Trip Dates</h4>
                         <div className="space-y-2">
                           {parseAdditionalDates(trip.additionalDates).map((dateObj, index) => (
                             <div key={index} className="p-3 rounded-lg bg-muted/50">
-                              <p className="text-sm text-muted-foreground">Date {index + 1}</p>
-                              <p className="font-medium">{formatDate(dateObj.date)}</p>
-                              {(dateObj.startTime || dateObj.endTime) && (
-                                <p className="font-medium military-time text-sm mt-1">
-                                  {formatTime(dateObj.startTime || trip.time)} - {formatTime(dateObj.endTime || trip.endTime)}
-                                </p>
-                              )}
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium">{formatDate(dateObj.date)}</p>
+                                  {dateObj.startTime && dateObj.endTime ? (
+                                    <p className="font-medium text-xs mt-1">{formatTime(dateObj.startTime)} - {formatTime(dateObj.endTime)}</p>
+                                  ) : dateObj.startTime ? (
+                                    <p className="font-medium text-xs mt-1">{formatTime(dateObj.startTime)}</p>
+                                  ) : dateObj.time ? (
+                                    <p className="font-medium text-xs mt-1">{formatTime(dateObj.time)}</p>
+                                  ) : null}
+                                </div>
+                              </div>
                             </div>
                           ))}
+                        </div>
+                        <div className="pt-4 border-t grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="p-3 rounded-lg bg-muted/50">
+                            <p className="text-xs text-muted-foreground mb-1">Duration</p>
+                            <p className="font-medium text-sm">{trip.durationDays}d / {trip.durationNights}n</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-muted/50">
+                            <p className="text-xs text-muted-foreground mb-1">Difficulty</p>
+                            <p className="font-medium text-sm">{trip.difficultyLevel}</p>
+                          </div>
                         </div>
                       </div>
                     ) : null}
@@ -233,50 +311,64 @@ export default function TripDetail() {
                       </div>
                     )}
 
-                    {trip.volunteerNames && (
-                      <div>
-                        <h3 className="font-semibold mb-2">Volunteers</h3>
-                        <p className="text-muted-foreground">{trip.volunteerNames}</p>
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               </div>
 
-              <div className="lg:col-span-1">
-                <Card className="sticky top-20">
+              <div className="space-y-6 max-w-4xl mx-auto w-full">
+                <Card>
                   <CardHeader>
-                    <CardTitle>Registration</CardTitle>
+                    <CardTitle className="text-lg">Registration</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <span className="text-sm font-medium">Spots Available</span>
-                        <span className="text-sm font-medium text-primary">{spotsLeft} / {trip.capacity}</span>
-                      </div>
-                      <Progress value={fillPercentage} className="h-2" />
-                    </div>
-
-                    {spotsLeft > 0 && !trip.isFull ? (
-                      <Button 
-                        className="w-full" 
-                        data-testid={`button-register-trip-${trip.id}`}
-                        size="lg"
-                        onClick={handleRegisterClick}
-                      >
-                        Register for Trip
-                      </Button>
+                    {trip?.isFull ? (
+                      <>
+                        <p className="text-destructive font-semibold">This trip is full</p>
+                        <Button 
+                          className="w-full" 
+                          data-testid={`button-register-trip-${trip.id}`}
+                          size="lg"
+                          disabled
+                          variant="secondary"
+                        >
+                          Event Full
+                        </Button>
+                      </>
                     ) : (
-                      <Button disabled className="w-full" data-testid="button-trip-full" size="lg">
-                        Trip is Full
-                      </Button>
+                      <>
+                        <p className="text-muted-foreground">Hurry, spots fill up fast!!</p>
+                        <Button 
+                          className="w-full" 
+                          data-testid={`button-register-trip-${trip.id}`}
+                          size="lg"
+                          onClick={handleRegisterClick}
+                        >
+                          Register for This Trip
+                        </Button>
+                      </>
                     )}
+                  </CardContent>
+                </Card>
 
-                    <div className="pt-2 border-t">
-                      <p className="text-xs text-muted-foreground">
-                        Fill out the registration form and select this trip as your registration type.
-                      </p>
-                    </div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">What to Expect</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3">
+                      <li className="flex items-start gap-3">
+                        <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                        <span className="text-sm">Easy online registration</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                        <span className="text-sm">Pre-trip planning and preparation</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                        <span className="text-sm">Unforgettable outdoor adventure with our community</span>
+                      </li>
+                    </ul>
                   </CardContent>
                 </Card>
               </div>

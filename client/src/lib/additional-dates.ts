@@ -63,16 +63,13 @@ export function getEventDateDisplay(event: any): { label: string; display: strin
   if (event.dateRangeMode && event.dateRangeStart && event.dateRangeEnd) {
     // Date range mode
     const rangeDisplay = `${formatDate(event.dateRangeStart)} - ${formatDate(event.dateRangeEnd)}`;
-    const startTime = formatTime(event.dateRangeStartTime || '');
-    const endTime = formatTime(event.dateRangeEndTime || '');
-    const timeDisplay = startTime && endTime ? ` (${startTime} - ${endTime})` : '';
-    return { label: 'Date Range', display: rangeDisplay + timeDisplay };
+    return { label: 'Date Range', display: rangeDisplay };
   } else if (event.additionalDates) {
     // Multiple dates mode
     try {
       const parsed = parseAdditionalDates(event.additionalDates);
       if (parsed.length > 0) {
-        return { label: 'Multiple Dates', display: 'Multiple dates and times' };
+        return { label: 'Multiple Dates', display: 'Multiple dates' };
       }
     } catch {
       // Fall through to single date
@@ -81,16 +78,5 @@ export function getEventDateDisplay(event: any): { label: string; display: strin
   
   // Single date mode (default)
   const dateDisplay = formatDate(event.date);
-  const startTime = formatTime(event.startTime || event.time || '');
-  const endTime = formatTime(event.endTime || '');
-  
-  let timeDisplay = '';
-  if (startTime && endTime) {
-    timeDisplay = `${startTime} - ${endTime}`;
-  } else if (startTime) {
-    timeDisplay = startTime;
-  }
-  
-  const fullDisplay = timeDisplay ? `${dateDisplay} at ${timeDisplay}` : dateDisplay;
-  return { label: 'Date', display: fullDisplay };
+  return { label: 'Date', display: dateDisplay };
 }

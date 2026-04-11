@@ -13,6 +13,28 @@ import volunteerImage from "@assets/Volunteer_pic_1768761271488.png";
 import tripCoordinatorImage from "@assets/tripCoordinator_pic_1768761876957.png";
 import { formatDate, formatTime, getEventDateDisplay } from "@/lib/additional-dates";
 
+function getLocationDisplay(location: string): string {
+  if (!location) return '';
+  try {
+    const data = JSON.parse(location);
+    return `${data.name}, ${data.address}`;
+  } catch {
+    // Fallback for old format
+    return location;
+  }
+}
+
+function getLocationNameAndAddress(location: string): { name: string; address: string } {
+  if (!location) return { name: '', address: '' };
+  try {
+    const data = JSON.parse(location);
+    return { name: data.name || '', address: data.address || '' };
+  } catch {
+    // Fallback for old format
+    return { name: location, address: '' };
+  }
+}
+
 export default function Home() {
   const { data: events = [], isLoading: eventsLoading } = useQuery<Event[]>({
     queryKey: ["/api/events"],
@@ -113,7 +135,6 @@ export default function Home() {
             ) : upcomingEvents.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {upcomingEvents.map((event, index) => {
-                  const dateInfo = getEventDateDisplay(event);
                   return (
                     <Link key={event.id} href={`/events/${event.id}`}>
                       <Card className="group h-full hover-elevate cursor-pointer transition-all duration-200 overflow-hidden">
@@ -125,28 +146,60 @@ export default function Home() {
                             style={{ maxHeight: 192 }}
                           />
                         </div>
-                        <CardHeader>
-                          <div className="text-sm text-primary font-medium mb-1">{dateInfo.display}</div>
+                        <CardHeader className="min-h-[88px]">
                           <CardTitle className="group-hover:text-primary transition-colors" data-testid={`text-event-title-${event.id}`}>
                             {event.title}
                           </CardTitle>
                           <CardDescription className="line-clamp-2">{event.description}</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-2">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <MapPin className="h-4 w-4" />
-                            <span>{event.location}</span>
+                        <CardContent className="flex flex-col flex-grow space-y-0">
+                          <div className="gap-y-1.5 flex flex-col flex-grow">
+                            <div className="h-6 flex items-center gap-2 text-sm text-muted-foreground">
+                              <Calendar className="h-5 w-5" />
+                              <span>
+                                {event.dateRangeMode || (event.additionalDates && JSON.parse(event.additionalDates).length > 0)
+                                  ? "Multiple Days"
+                                  : event.date
+                                  ? formatDate(event.date)
+                                  : "Date TBA"}
+                              </span>
+                            </div>
+                            <div className="h-6 flex items-center gap-2 text-sm text-muted-foreground">
+                              <Clock className="h-5 w-5" />
+                              {event.dateRangeMode || (event.additionalDates && JSON.parse(event.additionalDates).length > 0) ? (
+                                <span>Times vary</span>
+                              ) : (
+                                <span>
+                                  {event.startTime && event.endTime 
+                                    ? `${formatTime(event.startTime)} - ${formatTime(event.endTime)}`
+                                    : event.startTime 
+                                    ? formatTime(event.startTime)
+                                    : event.time 
+                                    ? formatTime(event.time)
+                                    : 'Time TBA'}
+                                </span>
+                              )}
+                            </div>
+                            <div className="h-10 flex gap-2 text-sm text-muted-foreground">
+                              <MapPin className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                              <div className="flex flex-col min-w-0 max-h-10">
+                                <span className="line-clamp-1">{getLocationNameAndAddress(event.location).name}</span>
+                                {getLocationNameAndAddress(event.location).address && (
+                                  <span className="text-xs line-clamp-1 overflow-hidden">{getLocationNameAndAddress(event.location).address}</span>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          <div className="pt-2">
+                          <div className="space-y-2 pt-2 border-t mt-auto">
                             <Button 
                               size="sm" 
-                              className="w-full bg-[#c73e1d]/90 hover:bg-[#c73e1d] border-[#c73e1d]/90" 
-                            data-testid={`button-details-event-${event.id}`}
-                          >
-                            See Details
-                          </Button>
-                        </div>
-                      </CardContent>
+                              className="w-full bg-[#c73e1d]/90 hover:bg-[#c73e1d] border-[#c73e1d]/90 text-white"
+                              data-testid={`button-details-event-${event.id}`}
+                            >
+                              See Details
+                            </Button>
+                          </div>
+                        </CardContent>
                     </Card>
                   </Link>
                   );
@@ -200,22 +253,37 @@ export default function Home() {
                         style={{ maxHeight: 192 }}
                       />
                     </div>
-                    <CardHeader>
+                    <CardHeader className="min-h-[88px]">
                       <CardTitle data-testid={`text-program-name-${program.id}`}>{program.name}</CardTitle>
                       <CardDescription className="line-clamp-2">{program.description}</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar className="h-4 w-4" />
-                        <span>{formatDate(program.startDate)}</span>
+                    <CardContent className="flex flex-col flex-grow space-y-0">
+                      <div className="gap-y-1.5 flex flex-col flex-grow">
+                        <div className="h-6 flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="h-5 w-5" />
+                          <span>{formatDate(program.startDate)}</span>
+                        </div>
+                        {program.startTime && program.endTime && (
+                          <div className="h-6 flex items-center gap-2 text-sm text-muted-foreground">
+                            <Clock className="h-5 w-5" />
+                            <span>{formatTime(program.startTime)} - {formatTime(program.endTime)}</span>
+                          </div>
+                        )}
+                        {program.location && (
+                          <div className="h-10 flex gap-2 text-sm text-muted-foreground">
+                            <MapPin className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                            <div className="flex flex-col min-w-0 max-h-10">
+                              <span className="line-clamp-1">{getLocationNameAndAddress(program.location).name}</span>
+                              {getLocationNameAndAddress(program.location).address && (
+                                <span className="text-xs line-clamp-1 overflow-hidden">{getLocationNameAndAddress(program.location).address}</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Clock className="h-4 w-4" />
-                        <span>{program.schedule}</span>
-                      </div>
-                      <div className="flex items-center justify-end pt-2">
+                      <div className="space-y-2 pt-2 border-t mt-auto">
                         <Link href={`/programs/${program.id}`}>
-                          <Button size="sm" className="bg-[#c73e1d]/90 hover:bg-[#c73e1d] border-[#c73e1d]/90" data-testid={`button-details-program-${program.id}`}>
+                          <Button size="sm" className="w-full bg-[#c73e1d]/90 hover:bg-[#c73e1d] border-[#c73e1d]/90 text-white" data-testid={`button-details-program-${program.id}`}>
                             See Details
                           </Button>
                         </Link>
