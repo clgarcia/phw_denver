@@ -41,9 +41,8 @@ Thumbs.db
 # -------------------------------------------------------
 # Vite / React Frontend
 # -------------------------------------------------------
-# Allow pre-built client to be committed; ignore server build output
-/dist/server/
-/dist/*.tsbuildinfo
+# Ignore all dist folder - always rebuild in production
+/dist/
 .cache/
 *.local
 

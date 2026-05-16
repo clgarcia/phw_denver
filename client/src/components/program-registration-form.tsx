@@ -8,10 +8,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Program } from "@shared/schema";
+import { useState } from "react";
 
 const phoneRegex = /^\d{3}-\d{3}-\d{4}$/;
 
@@ -35,10 +37,127 @@ interface ProgramRegistrationFormProps {
 
 export function ProgramRegistrationForm({ programId, onSuccess }: ProgramRegistrationFormProps) {
   const { toast } = useToast();
+  const [enteredPin, setEnteredPin] = useState("");
+  const [pinError, setPinError] = useState("");
 
   const { data: program } = useQuery<Program>({
     queryKey: ["/api/programs", programId],
   });
+
+  // Fetch the global registration PIN from settings
+  const { data: settingsData } = useQuery({
+    queryKey: ["/api/settings/registration-pin"],
+  });
+
+  const globalPin = settingsData?.pin as string | undefined;
+
+  // If Google Form URL is provided with a global PIN, show PIN verification
+  if (program?.googleFormUrl && globalPin) {
+    const isPinCorrect = enteredPin === globalPin;
+
+    const handleRegisterClick = () => {
+      if (!isPinCorrect) {
+        setPinError("Incorrect PIN. Please try again.");
+        return;
+      }
+      window.open(program.googleFormUrl, "_blank");
+    };
+
+    return (
+      <div className="space-y-4">
+        {/* Program Information Card */}
+        {program && (
+          <Card className="bg-muted/50">
+            <CardHeader>
+              <CardTitle className="text-lg">{program.name}</CardTitle>
+            </CardHeader>
+          </Card>
+        )}
+        
+        {/* PIN Verification Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Registration</CardTitle>
+            <CardDescription>Enter the PIN to register for this program</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {pinError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{pinError}</AlertDescription>
+              </Alert>
+            )}
+            <div className="space-y-2">
+              <label htmlFor="pin" className="text-sm font-medium">
+                PIN
+              </label>
+              <Input
+                id="pin"
+                type="text"
+                placeholder="Enter PIN"
+                value={enteredPin}
+                onChange={(e) => {
+                  setEnteredPin(e.target.value);
+                  setPinError("");
+                }}
+                className="text-center text-lg tracking-widest"
+              />
+            </div>
+            <Button 
+              className="w-full"
+              onClick={handleRegisterClick}
+              disabled={!isPinCorrect}
+            >
+              Register for Program
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // If Google Form URL is provided without PIN, redirect immediately
+  if (program?.googleFormUrl) {
+    return (
+      <div className="space-y-4">
+        {/* Program Information Card */}
+        {program && (
+          <Card className="bg-muted/50">
+            <CardHeader>
+              <CardTitle className="text-lg">{program.name}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Start Date:</span>
+                <span className="font-medium">{new Date(program.startDate).toLocaleDateString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">End Date:</span>
+                <span className="font-medium">{new Date(program.endDate).toLocaleDateString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Schedule:</span>
+                <span className="font-medium">{program.schedule}</span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
+        <div className="flex flex-col gap-2 pt-4">
+          <a 
+            href={program?.googleFormUrl} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="w-full"
+          >
+            <Button className="w-full">
+              Register for Program
+            </Button>
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   const form = useForm<ProgramRegistrationFormData>({
     resolver: zodResolver(programRegistrationSchema),
@@ -89,7 +208,6 @@ export function ProgramRegistrationForm({ programId, onSuccess }: ProgramRegistr
         <Card className="bg-muted/50">
           <CardHeader>
             <CardTitle className="text-lg">{program.name}</CardTitle>
-            <CardDescription>{program.description}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <div className="flex justify-between">

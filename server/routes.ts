@@ -9,7 +9,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 import { createServer, type Server } from "http";
 import { storage } from "./storage.js";
 import { insertEventSchema, insertProgramSchema, insertTripSchema, insertRegistrationSchema } from "../shared/schema.js";
-import { sendRegistrationConfirmation } from "./email.js";
 
 // Registers all API endpoints for the application
 export async function registerRoutes(
@@ -48,7 +47,8 @@ export async function registerRoutes(
       const event = await storage.createEvent(parsed.data);
       res.status(201).json(event);
     } catch (error) {
-      res.status(500).json({ message: "Failed to create event" });
+      console.error("Failed to create event:", error);
+      res.status(500).json({ message: "Failed to create event", error: String(error) });
     }
   });
 
@@ -110,7 +110,8 @@ export async function registerRoutes(
       const program = await storage.createProgram(parsed.data);
       res.status(201).json(program);
     } catch (error) {
-      res.status(500).json({ message: "Failed to create program" });
+      console.error("Failed to create program:", error);
+      res.status(500).json({ message: "Failed to create program", error: String(error) });
     }
   });
 
@@ -172,7 +173,7 @@ export async function registerRoutes(
         if (!event) {
           return res.status(400).json({ message: "Event not found" });
         }
-        if (event.registeredCount >= event.capacity) {
+        if (event.capacity && event.registeredCount >= event.capacity) {
           return res.status(400).json({ message: "Event is full" });
         }
       }
@@ -182,7 +183,7 @@ export async function registerRoutes(
         if (!program) {
           return res.status(400).json({ message: "Program not found" });
         }
-        if (program.registeredCount >= program.capacity) {
+        if (program.capacity && program.registeredCount >= program.capacity) {
           return res.status(400).json({ message: "Program is full" });
         }
       }
@@ -192,7 +193,7 @@ export async function registerRoutes(
         if (!trip) {
           return res.status(400).json({ message: "Trip not found" });
         }
-        if (trip.registeredCount >= trip.capacity) {
+        if (trip.isFull) {
           return res.status(400).json({ message: "Trip is full" });
         }
       }
@@ -233,24 +234,6 @@ export async function registerRoutes(
         hasProgram: !!program,
         hasTrip: !!trip,
       });
-
-      sendRegistrationConfirmation({
-        recipientEmail: registration.email,
-        recipientName: `${registration.firstName} ${registration.lastName}`,
-        participationType: registration.participationType || "participant",
-        eventTitle: event?.title,
-        eventDate: event?.date,
-        eventTime: event?.time,
-        eventLocation: event?.location,
-        programName: program?.name,
-        programStartDate: program?.startDate,
-        tripName: trip?.name,
-        tripDate: trip?.date,
-        tripEndDate: trip?.endDate,
-        tripTime: trip?.time,
-        tripEndTime: trip?.endTime,
-        tripMeetupLocation: trip?.meetupLocation,
-      }).catch(err => console.error("Email send failed:", err));
 
       res.status(201).json(registration);
     } catch (error) {
@@ -336,7 +319,8 @@ export async function registerRoutes(
       const trip = await storage.createTrip(parsed.data);
       res.status(201).json(trip);
     } catch (error) {
-      res.status(500).json({ message: "Failed to create trip" });
+      console.error("Failed to create trip:", error);
+      res.status(500).json({ message: "Failed to create trip", error: String(error) });
     }
   });
 
@@ -361,6 +345,30 @@ export async function registerRoutes(
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete trip" });
+    }
+  });
+
+  // Settings endpoints
+  app.get("/api/settings/registration-pin", async (req, res) => {
+    try {
+      const pin = await storage.getRegistrationPin();
+      res.json({ pin: pin || "" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch registration PIN" });
+    }
+  });
+
+  app.post("/api/settings/registration-pin", async (req, res) => {
+    try {
+      const { pin } = req.body;
+      if (!pin) {
+        return res.status(400).json({ message: "PIN is required" });
+      }
+      await storage.setRegistrationPin(pin);
+      res.json({ pin });
+    } catch (error) {
+      console.error("Error saving registration PIN:", error);
+      res.status(500).json({ message: "Failed to save registration PIN", error: error instanceof Error ? error.message : String(error) });
     }
   });
 

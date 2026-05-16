@@ -4,6 +4,9 @@ if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL, ensure the database is provisioned");
 }
 
+// Allow self-signed certificates for production PostgreSQL
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
 export default defineConfig({
   out: "./migrations",
   schema: "./shared/schema.ts",

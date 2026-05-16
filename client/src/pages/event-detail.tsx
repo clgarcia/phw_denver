@@ -3,47 +3,60 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { Calendar, Clock, MapPin, Users, ArrowLeft, CheckCircle } from "lucide-react";
+import { Calendar, Clock, MapPin, Users, ArrowLeft, CheckCircle, ExternalLink } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { Event } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EventRegistrationForm } from "@/components/event-registration-form";
+import { PinVerificationModal } from "@/components/pin-verification-modal";
+import { parseAdditionalDates, formatDate as formatDateUtil, formatTime, getEventDateDisplay } from "@/lib/additional-dates";
 import { useState } from "react";
 
-
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-}
-
-function formatTime(timeString: string): string {
-  if (!timeString) return '';
-  try {
-    const [hours, minutes] = timeString.split(':').map(Number);
-    const period = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
-    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
-  } catch {
-    return timeString;
-  }
-}
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
   const [showRegistrationDialog, setShowRegistrationDialog] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [urlToOpen, setUrlToOpen] = useState<string | null>(null);
 
   const { data: event, isLoading, error } = useQuery<Event>({
     queryKey: ["/api/events", id],
   });
 
-  const spotsLeft = event ? event.capacity - event.registeredCount : 0;
-  const fillPercentage = event ? (event.registeredCount / event.capacity) * 100 : 0;
+  // Parse location JSON format
+  const getLocationDisplay = () => {
+    if (!event?.location) return { name: "", address: "" };
+    try {
+      return JSON.parse(event.location);
+    } catch {
+      // Fallback for old format
+      return { name: event.location, address: "" };
+    }
+  };
+
+  const locationData = getLocationDisplay();
+
+  const spotsLeft = event ? (event.isFull ? 0 : event.capacity - event.registeredCount) : 0;
+  const registeredDisplay = event ? (event.isFull ? event.capacity : event.registeredCount) : 0;
+  const fillPercentage = event ? (event.isFull ? 100 : (event.registeredCount / event.capacity) * 100) : 0;
+
+  const handleRegisterClick = () => {
+    if (event?.googleFormUrl) {
+      setUrlToOpen(event.googleFormUrl);
+      setShowPinModal(true);
+    } else {
+      setShowRegistrationDialog(true);
+    }
+  };
+
+  const handlePinVerified = () => {
+    if (urlToOpen) {
+      window.open(urlToOpen, "_blank");
+      setUrlToOpen(null);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -59,8 +72,8 @@ export default function EventDetail() {
           </Link>
 
           {isLoading ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2">
+            <div className="grid grid-cols-1 gap-8">
+              <div>
                 <Card className="animate-pulse">
                   <div className="h-64 bg-muted rounded-t-lg" />
                   <CardHeader>
@@ -94,8 +107,8 @@ export default function EventDetail() {
               </Link>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 gap-8 max-w-4xl mx-auto w-full">
+              <div className="space-y-6">
                 <Card>
                   {event.imageUrl ? (
                     <div className="h-64 rounded-t-lg overflow-hidden flex items-center justify-center bg-black/5">
@@ -124,7 +137,6 @@ export default function EventDetail() {
                         <CardTitle className="text-2xl md:text-3xl" data-testid="text-event-title">
                           {event.title}
                         </CardTitle>
-                        <CardDescription className="mt-2">{formatDate(event.date)} at {formatTime(event.time)}</CardDescription>
                       </div>
                       <Badge variant={event.isActive ? "default" : "secondary"}>
                         {event.isActive ? "Active" : "Inactive"}
@@ -139,99 +151,152 @@ export default function EventDetail() {
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                        <Calendar className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Date</p>
-                          <p className="font-medium">{formatDate(event.date)}</p>
-                        </div>
+                    <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
+                      <MapPin className="h-5 w-5 text-primary" />
+                      <div className="flex-1">
+                        <p className="font-medium">{locationData.name}</p>
+                        <p className="text-sm text-muted-foreground">{locationData.address}</p>
                       </div>
-                      <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                        <Clock className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Time</p>
-                          <p className="font-medium">{formatTime(event.time)}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                        <MapPin className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Location</p>
-                          <p className="font-medium">{event.location}</p>
-                        </div>
+                      <div className="flex gap-2 flex-col sm:flex-row">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(`${locationData.name} ${locationData.address}`)}`, '_blank')}
+                          className="text-xs"
+                          data-testid="button-google-maps-event"
+                        >
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          Google Maps
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(`https://maps.apple.com/?address=${encodeURIComponent(`${locationData.name} ${locationData.address}`)}`, '_blank')}
+                          className="text-xs"
+                          data-testid="button-apple-maps-event"
+                        >
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          Apple Maps
+                        </Button>
                       </div>
                     </div>
+
+                    {event.dateRangeMode && event.dateRangeStart && event.dateRangeEnd ? (
+                      <div className="pt-4 border-t space-y-3">
+                        <h4 className="font-semibold text-sm">Date Range Details</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="p-3 rounded-lg bg-muted/50">
+                            <p className="text-xs text-muted-foreground mb-1">Start Date</p>
+                            <p className="font-medium text-sm">{formatDateUtil(event.dateRangeStart)}</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-muted/50">
+                            <p className="text-xs text-muted-foreground mb-1">End Date</p>
+                            <p className="font-medium text-sm">{formatDateUtil(event.dateRangeEnd)}</p>
+                          </div>
+                          {event.dateRangeStartTime && (
+                            <div className="p-3 rounded-lg bg-muted/50">
+                              <p className="text-xs text-muted-foreground mb-1">Start Time</p>
+                              <p className="font-medium text-sm">{formatTime(event.dateRangeStartTime)}</p>
+                            </div>
+                          )}
+                          {event.dateRangeEndTime && (
+                            <div className="p-3 rounded-lg bg-muted/50">
+                              <p className="text-xs text-muted-foreground mb-1">End Time</p>
+                              <p className="font-medium text-sm">{formatTime(event.dateRangeEndTime)}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : event.additionalDates && parseAdditionalDates(event.additionalDates).length > 0 ? (
+                      <div className="pt-4 border-t">
+                        <h4 className="font-semibold mb-3 text-sm">Multiple Event Dates</h4>
+                        <div className="space-y-2">
+                          {parseAdditionalDates(event.additionalDates).map((dateObj, index) => (
+                            <div key={index} className="p-3 rounded-lg bg-muted/50">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium">{formatDateUtil(dateObj.date)}</p>
+                                  {dateObj.startTime && dateObj.endTime ? (
+                                    <p className="font-medium text-xs mt-1">{formatTime(dateObj.startTime)} - {formatTime(dateObj.endTime)}</p>
+                                  ) : dateObj.startTime ? (
+                                    <p className="font-medium text-xs mt-1">{formatTime(dateObj.startTime)}</p>
+                                  ) : dateObj.time ? (
+                                    <p className="font-medium text-xs mt-1">{formatTime(dateObj.time)}</p>
+                                  ) : null}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : event.date ? (
+                      <div className="pt-4 border-t space-y-3">
+                        <h4 className="font-semibold text-sm">Event Details</h4>
+                        <div className="space-y-3">
+                          <div className="p-3 rounded-lg bg-muted/50">
+                            <p className="text-xs text-muted-foreground mb-1">Date</p>
+                            <p className="font-medium text-sm">{formatDateUtil(event.date)}</p>
+                          </div>
+                          {(event.startTime || event.endTime) && (
+                            <div className="p-3 rounded-lg bg-muted/50">
+                              <p className="text-xs text-muted-foreground mb-1">Time</p>
+                              <p className="font-medium text-sm">
+                                {event.startTime && event.endTime 
+                                  ? `${formatTime(event.startTime)} - ${formatTime(event.endTime)}`
+                                  : event.startTime 
+                                  ? formatTime(event.startTime)
+                                  : formatTime(event.endTime || '')}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : null}
                   </CardContent>
                 </Card>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-6 max-w-4xl mx-auto w-full">
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">Registration</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Capacity</span>
-                        <span className="font-medium">{event.registeredCount} / {event.capacity}</span>
-                      </div>
-                      <Progress value={fillPercentage} className="h-2" />
-                    </div>
-
-                    <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
-                      <Users className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="font-medium text-primary">{spotsLeft} spots remaining</p>
-                        <p className="text-sm text-muted-foreground">
-                          {fillPercentage > 80 ? "Filling up fast!" : "Spots available"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {spotsLeft > 0 ? (
-                      <Button 
-                        type="button"
-                        className="w-full" 
-                        size="lg" 
-                        data-testid="button-register-event"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setShowRegistrationDialog(true);
-                        }}
-                      >
-                        Register for This Event
-                      </Button>
-                    ) : (
-                      <Button className="w-full" size="lg" disabled>
-                        Event Full
-                      </Button>
-                    )}
+                    <p className="text-muted-foreground">Hurry, spots fill up fast!!</p>
+                    <Button 
+                      className="w-full" 
+                      size="lg" 
+                      data-testid="button-register-event"
+                      onClick={handleRegisterClick}
+                    >
+                      Register for This Event
+                    </Button>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">What to Expect</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-3">
-                      <li className="flex items-start gap-3">
-                        <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
-                        <span className="text-sm">Easy online registration</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
-                        <span className="text-sm">Confirmation email sent immediately</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
-                        <span className="text-sm">Reminder before the event</span>
-                      </li>
-                    </ul>
-                  </CardContent>
-                </Card>
+                {event.requiresRegistration && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">What to Expect</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="space-y-3">
+                        <li className="flex items-start gap-3">
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                          <span className="text-sm">Easy online registration</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                          <span className="text-sm">Quick setup - start immediately after registration</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                          <span className="text-sm">Connect with our community of participants</span>
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </div>
           )}
@@ -254,6 +319,13 @@ export default function EventDetail() {
           )}
         </DialogContent>
       </Dialog>
+
+      <PinVerificationModal
+        open={showPinModal}
+        onOpenChange={setShowPinModal}
+        onVerified={handlePinVerified}
+        registrationType="event"
+      />
 
       <Footer />
     </div>

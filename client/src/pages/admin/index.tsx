@@ -1,6 +1,6 @@
 import { Link, useLocation, Switch, Route } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, ClipboardList, LayoutDashboard, Menu, ArrowLeft, Navigation, LogOut } from "lucide-react";
+import { Calendar, Users, ClipboardList, LayoutDashboard, Menu, ArrowLeft, Navigation, LogOut, Settings } from "lucide-react";
 const flagFish = "/assets/flag-fish.png";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
@@ -9,6 +9,7 @@ import AdminEvents from "./events";
 import AdminPrograms from "./programs";
 import AdminTrips from "./trips";
 import AdminRegistrations from "./registrations";
+import AdminSettings from "./settings";
 
 export default function AdminLayout() {
   const [location, navigate] = useLocation();
@@ -21,6 +22,7 @@ export default function AdminLayout() {
     { href: "/admin/programs", label: "Programs", icon: ClipboardList },
     { href: "/admin/trips", label: "Trips", icon: Navigation },
     { href: "/admin/registrations", label: "Registrations", icon: Users },
+    { href: "/admin/settings", label: "Settings", icon: Settings },
   ];
 
   const isActive = (href: string, exact?: boolean) => {
@@ -101,6 +103,7 @@ export default function AdminLayout() {
             <Route path="/admin/programs" component={AdminPrograms} />
             <Route path="/admin/trips" component={AdminTrips} />
             <Route path="/admin/registrations" component={AdminRegistrations} />
+            <Route path="/admin/settings" component={AdminSettings} />
           </Switch>
         </main>
       </div>

@@ -5,7 +5,7 @@ import {
   type Program, type InsertProgram,
   type Trip, type InsertTrip,
   type Registration, type InsertRegistration,
-  users, events, programs, trips, registrations
+  users, events, programs, trips, registrations, settings
 } from "../shared/schema.js";
 import { db } from "./db.js";
 import { eq, sql } from "drizzle-orm";
@@ -46,6 +46,9 @@ export interface IStorage {
   archiveRegistration(id: string): Promise<Registration | undefined>;
   unarchiveRegistration(id: string): Promise<Registration | undefined>;
   
+  getRegistrationPin(): Promise<string | null>;
+  setRegistrationPin(pin: string): Promise<void>;
+  
   initializeDatabase(): Promise<void>;
 }
 
@@ -69,6 +72,7 @@ export class DatabaseStorage implements IStorage {
       location: "Mountain View Convention Center",
       capacity: 150,
       isActive: true,
+      requiresRegistration: true,
     });
     
     const event2 = await this.createEvent({
@@ -79,6 +83,7 @@ export class DatabaseStorage implements IStorage {
       location: "Community Library, Main Hall",
       capacity: 75,
       isActive: true,
+      requiresRegistration: false,
     });
     
     await this.createEvent({
@@ -89,6 +94,7 @@ export class DatabaseStorage implements IStorage {
       location: "Clear Creek State Park",
       capacity: 20,
       isActive: true,
+      requiresRegistration: true,
     });
 
     await this.createEvent({
@@ -99,6 +105,7 @@ export class DatabaseStorage implements IStorage {
       location: "Riverside Park Pavilion",
       capacity: 25,
       isActive: true,
+      requiresRegistration: true,
     });
 
     const program1 = await this.createProgram({
@@ -357,6 +364,27 @@ export class DatabaseStorage implements IStorage {
   async unarchiveRegistration(id: string): Promise<Registration | undefined> {
     const result = await db.update(registrations).set({ isArchived: false }).where(eq(registrations.id, id)).returning();
     return result[0];
+  }
+
+  // Get the global registration PIN
+  async getRegistrationPin(): Promise<string | null> {
+    const result = await db.select().from(settings).where(eq(settings.key, "registration_pin"));
+    return result[0]?.value || null;
+  }
+
+  // Set the global registration PIN
+  async setRegistrationPin(pin: string): Promise<void> {
+    try {
+      const existing = await db.select().from(settings).where(eq(settings.key, "registration_pin"));
+      if (existing.length > 0) {
+        await db.update(settings).set({ value: pin }).where(eq(settings.key, "registration_pin"));
+      } else {
+        await db.insert(settings).values({ key: "registration_pin", value: pin });
+      }
+    } catch (error) {
+      console.error("Error in setRegistrationPin:", error);
+      throw error;
+    }
   }
 }
 

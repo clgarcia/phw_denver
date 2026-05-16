@@ -8,31 +8,55 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
 });
 
+export const settings = pgTable("settings", {
+  key: varchar("key", { length: 100 }).primaryKey(),
+  value: text("value").notNull(),
+});
+
 export const events = pgTable("events", {
   id: varchar("id", { length: 36 }).primaryKey(),
   title: text("title").notNull(),
   description: text("description").notNull(),
-  date: text("date").notNull(),
-  time: text("time").notNull(),
+  date: text("date"),
+  time: text("time"),
+  startTime: text("start_time"),
+  endTime: text("end_time"),
   location: text("location").notNull(),
-  capacity: integer("capacity").notNull(),
+  capacity: integer("capacity"),
   registeredCount: integer("registered_count").notNull().default(0),
   imageUrl: text("image_url"),
+  googleFormUrl: text("google_form_url"),
   isActive: boolean("is_active").notNull().default(true),
+  requiresRegistration: boolean("requires_registration").notNull().default(true),
+  additionalDates: text("additional_dates"),
+  dateRangeMode: boolean("date_range_mode"),
+  dateRangeStart: text("date_range_start"),
+  dateRangeEnd: text("date_range_end"),
+  dateRangeStartTime: text("date_range_start_time"),
+  dateRangeEndTime: text("date_range_end_time"),
 });
 
 export const programs = pgTable("programs", {
   id: varchar("id", { length: 36 }).primaryKey(),
   name: text("name").notNull(),
   description: text("description").notNull(),
-  startDate: text("start_date").notNull(),
-  endDate: text("end_date").notNull(),
-  schedule: text("schedule").notNull(),
-  // price removed
-  capacity: integer("capacity").notNull(),
+  startDate: text("start_date"),
+  endDate: text("end_date"),
+  schedule: text("schedule"),
+  location: text("location"),
+  capacity: integer("capacity"),
   registeredCount: integer("registered_count").notNull().default(0),
+  startTime: text("start_time"),
+  endTime: text("end_time"),
   imageUrl: text("image_url"),
+  googleFormUrl: text("google_form_url"),
   isActive: boolean("is_active").notNull().default(true),
+  additionalDates: text("additional_dates"),
+  dateRangeMode: boolean("date_range_mode"),
+  dateRangeStart: text("date_range_start"),
+  dateRangeEnd: text("date_range_end"),
+  dateRangeStartTime: text("date_range_start_time"),
+  dateRangeEndTime: text("date_range_end_time"),
 });
 
 export const registrations = pgTable("registrations", {
@@ -55,23 +79,26 @@ export const trips = pgTable("trips", {
   id: varchar("id", { length: 36 }).primaryKey(),
   name: text("name").notNull(),
   description: text("description").notNull(),
-  date: text("date").notNull(),
-  endDate: text("end_date").notNull(),
-  time: text("time").notNull(),
-  endTime: text("end_time").notNull(),
-  meetupLocation: text("meetup_location").notNull(),
+  date: text("date"),
+  endDate: text("end_date"),
+  time: text("time"),
+  startTime: text("start_time"),
+  endTime: text("end_time"),
   destination: text("destination").notNull(),
-  capacity: integer("capacity").notNull(),
-  registeredCount: integer("registered_count").notNull().default(0),
   durationDays: integer("duration_days").notNull(),
   durationNights: integer("duration_nights").notNull(),
-  difficultyLevel: text("difficulty_level").notNull(), // e.g., "Beginner", "Intermediate", "Advanced"
-  tripCoordinatorCapacity: integer("trip_coordinator_capacity").notNull(),
-  tripCoordinatorNames: text("trip_coordinator_names"), // JSON string or comma-separated
-  volunteerCapacity: integer("volunteer_capacity").notNull(),
-  volunteerNames: text("volunteer_names"), // JSON string or comma-separated
+  difficultyLevel: text("difficulty_level").notNull(),
+  registeredCount: integer("registered_count").notNull().default(0),
   imageUrl: text("image_url"),
+  googleFormUrl: text("google_form_url"),
   isActive: boolean("is_active").notNull().default(true),
+  isFull: boolean("is_full").notNull().default(false),
+  additionalDates: text("additional_dates"),
+  dateRangeMode: boolean("date_range_mode"),
+  dateRangeStart: text("date_range_start"),
+  dateRangeEnd: text("date_range_end"),
+  dateRangeStartTime: text("date_range_start_time"),
+  dateRangeEndTime: text("date_range_end_time"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -82,11 +109,39 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export const insertEventSchema = createInsertSchema(events).omit({
   id: true,
   registeredCount: true,
+}).extend({
+  date: z.string().optional(),
+  time: z.string().optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+  imageUrl: z.string().optional(),
+  googleFormUrl: z.string().optional(),
+  additionalDates: z.string().optional(),
+  dateRangeMode: z.boolean().optional(),
+  dateRangeStart: z.string().optional(),
+  dateRangeEnd: z.string().optional(),
+  dateRangeStartTime: z.string().optional(),
+  dateRangeEndTime: z.string().optional(),
 });
 
 export const insertProgramSchema = createInsertSchema(programs).omit({
   id: true,
   registeredCount: true,
+}).extend({
+  schedule: z.string().optional(),
+  location: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+  imageUrl: z.string().optional(),
+  googleFormUrl: z.string().optional(),
+  additionalDates: z.string().optional(),
+  dateRangeMode: z.boolean().optional(),
+  dateRangeStart: z.string().optional(),
+  dateRangeEnd: z.string().optional(),
+  dateRangeStartTime: z.string().optional(),
+  dateRangeEndTime: z.string().optional(),
 });
 
 export const insertRegistrationSchema = createInsertSchema(registrations).omit({
@@ -98,6 +153,20 @@ export const insertRegistrationSchema = createInsertSchema(registrations).omit({
 export const insertTripSchema = createInsertSchema(trips).omit({
   id: true,
   registeredCount: true,
+}).extend({
+  date: z.string().optional(),
+  endDate: z.string().optional(),
+  time: z.string().optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+  imageUrl: z.string().optional(),
+  googleFormUrl: z.string().optional(),
+  additionalDates: z.string().optional(),
+  dateRangeMode: z.boolean().optional(),
+  dateRangeStart: z.string().optional(),
+  dateRangeEnd: z.string().optional(),
+  dateRangeStartTime: z.string().optional(),
+  dateRangeEndTime: z.string().optional(),
 });
 
 // Participant Registration Table
