@@ -15,8 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation, useSearch } from "wouter";
 import { Calendar, CheckCircle, Loader2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useState } from "react";
-import { useEffect } from "react";
+import { useState, useLayoutEffect } from "react";
 import { EventRegistrationForm } from "@/components/event-registration-form";
 import { ProgramRegistrationForm } from "@/components/program-registration-form";
 import { TripRegistrationForm } from "@/components/trip-registration-form";
@@ -77,29 +76,26 @@ export default function Register() {
   const [joinOption, setJoinOption] = useState<string>("");
   const [preselectedEventId, setPreselectedEventId] = useState<string | undefined>(undefined);
   const [preselectedProgramId, setPreselectedProgramId] = useState<string | undefined>(undefined);
-  const [isReady, setIsReady] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [urlToOpen, setUrlToOpen] = useState<string | null>(null);
   
-  // Parse query parameters from URL
-  useEffect(() => {
+  // Parse query parameters from URL - useLayoutEffect ensures it runs before paint
+  useLayoutEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const eventId = searchParams.get("event") || undefined;
     const programId = searchParams.get("program") || undefined;
     
     setPreselectedEventId(eventId);
     setPreselectedProgramId(programId);
-    setIsReady(true);
     
-    console.log('Event ID:', eventId);
-    console.log('Program ID:', programId);
+    console.log('Register page - Event ID:', eventId, 'Program ID:', programId);
   }, []);
   
   const isEventRegistration = !!preselectedEventId;
   const isProgramRegistration = !!preselectedProgramId;
   
   // If event-specific registration
-  if (isReady && isEventRegistration && preselectedEventId) {
+  if (isEventRegistration && preselectedEventId) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -114,7 +110,7 @@ export default function Register() {
   }
 
   // If program-specific registration
-  if (isReady && isProgramRegistration && preselectedProgramId) {
+  if (isProgramRegistration && preselectedProgramId) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -128,16 +124,6 @@ export default function Register() {
     );
   }
 
-  if (!isReady) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1" />
-        <Footer />
-      </div>
-    );
-  }
-  
   console.log('isEventRegistration:', isEventRegistration);
   console.log('isProgramRegistration:', isProgramRegistration);
 
