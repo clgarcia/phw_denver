@@ -60,12 +60,21 @@ export default function Programs() {
     queryKey: ["/api/programs"],
   });
 
-  // Filter and sort only active programs by start date
-  const activePrograms = programs
-    .filter(p => p.isActive)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Separate upcoming and past programs
+  const upcomingPrograms = programs
+    .filter(p => p.isActive && p.startDate && new Date(p.startDate) >= today)
     .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+  
+  const pastPrograms = programs
+    .filter(p => p.isActive && p.startDate && new Date(p.startDate) < today)
+    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
+    .slice(0, 6);
+
   // Filter programs based on search term (name or description)
-  const filteredPrograms = activePrograms.filter(program =>
+  const filteredPrograms = upcomingPrograms.filter(program =>
     program.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     program.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -240,6 +249,78 @@ export default function Programs() {
             )}
           </div>
         </section>
+
+        {/* Past Programs Section */}
+        {pastPrograms.length > 0 && (
+          <section className="py-12 bg-muted/30">
+            <div className="container mx-auto px-4">
+              <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center">Past Programs</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {pastPrograms.map((program) => (
+                  <Link key={program.id} href={`/programs/${program.id}`}>
+                    <Card className="group h-full flex flex-col hover-elevate cursor-pointer transition-all duration-200 opacity-75 hover:opacity-100">
+                      {program.imageUrl ? (
+                        <div className="h-48 rounded-t-lg overflow-hidden flex items-center justify-center bg-black/5">
+                          <div className="flex items-center justify-center h-full w-full bg-white" style={{ minHeight: 192 }}>
+                            <img
+                              src={program.imageUrl}
+                              alt={program.name}
+                              style={{
+                                maxWidth: "100%",
+                                maxHeight: "100%",
+                                width: "auto",
+                                height: "auto",
+                                display: "block",
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="h-48 bg-gradient-to-br from-primary/20 to-accent/20 rounded-t-lg flex items-center justify-center">
+                          <Calendar className="h-16 w-16 text-primary/40" />
+                        </div>
+                      )}
+                      <CardHeader>
+                        <CardTitle className="group-hover:text-primary transition-colors">{program.name}</CardTitle>
+                        <CardDescription className="line-clamp-2">{program.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="flex flex-col flex-grow space-y-0">
+                        <div className="space-y-2 flex-grow">
+                          <div className="h-6 flex items-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="h-5 w-5" />
+                            <span>{formatDate(program.startDate)}</span>
+                          </div>
+                          <div className="h-6 flex items-center gap-2 text-sm text-muted-foreground">
+                            <Clock className="h-5 w-5" />
+                            <span>
+                              {program.startTime && program.endTime ? `${formatTime(program.startTime)} - ${formatTime(program.endTime)}` : '-'}
+                            </span>
+                          </div>
+                          {program.location && (
+                            <div className="h-12 flex gap-2 text-sm text-muted-foreground">
+                              <MapPin className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                              <div className="flex flex-col">
+                                <span>{getLocationNameAndAddress(program.location).name}</span>
+                                {getLocationNameAndAddress(program.location).address && (
+                                  <span className="text-xs">{getLocationNameAndAddress(program.location).address}</span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div className="space-y-2 pt-2 border-t mt-auto">
+                          <Button className="w-full bg-[#c73e1d]/90 hover:bg-[#c73e1d] border-[#c73e1d]/90 text-white" size="lg">
+                            View Details
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
       </main>
 
       <Footer />

@@ -68,13 +68,21 @@ export default function Trips() {
     queryKey: ["/api/trips"],
   });
 
-  // Filter and sort only active trips by date
-  const activeTrips = trips
-    .filter(t => t.isActive)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Separate upcoming and past trips
+  const upcomingTrips = trips
+    .filter(t => t.isActive && t.date && new Date(t.date) >= today)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   
+  const pastTrips = trips
+    .filter(t => t.isActive && t.date && new Date(t.date) < today)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 6);
+  
   // Filter trips based on search term (name, description, or destination)
-  const filteredTrips = activeTrips.filter(trip =>
+  const filteredTrips = upcomingTrips.filter(trip =>
     trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     trip.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     getLocationSearchText(trip.destination).includes(searchTerm.toLowerCase())
@@ -245,6 +253,74 @@ export default function Trips() {
             )}
           </div>
         </section>
+
+        {/* Past Trips Section */}
+        {pastTrips.length > 0 && (
+          <section className="py-12 bg-muted/30">
+            <div className="container mx-auto px-4">
+              <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center">Past Trips</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {pastTrips.map((trip) => (
+                  <Link key={trip.id} href={`/trips/${trip.id}`}>
+                    <Card className="group h-full flex flex-col hover-elevate cursor-pointer transition-all duration-200 opacity-75 hover:opacity-100">
+                      {trip.imageUrl ? (
+                        <div className="h-48 rounded-t-lg overflow-hidden flex items-center justify-center bg-white" style={{ minHeight: 192 }}>
+                          <img
+                            src={trip.imageUrl}
+                            alt={trip.name}
+                            style={{
+                              maxWidth: "100%",
+                              maxHeight: "100%",
+                              width: "auto",
+                              height: "auto",
+                              display: "block",
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="h-48 bg-gradient-to-br from-blue-400/20 to-cyan-400/20 rounded-t-lg flex items-center justify-center">
+                          <Navigation className="h-16 w-16 text-blue-400/40" />
+                        </div>
+                      )}
+                      <CardHeader>
+                        <CardTitle className="group-hover:text-primary transition-colors">{trip.name}</CardTitle>
+                        <CardDescription className="line-clamp-2">{trip.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="flex flex-col flex-grow space-y-0">
+                        <div className="space-y-2 flex-grow">
+                          <div className="h-6 flex items-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="h-5 w-5" />
+                            <span>{formatDate(trip.date)}</span>
+                          </div>
+                          <div className="h-6 flex items-center gap-2 text-sm text-muted-foreground">
+                            <Clock className="h-5 w-5" />
+                            <span>
+                              {trip.startTime && trip.endTime ? `${formatTime(trip.startTime)} - ${formatTime(trip.endTime)}` : '-'}
+                            </span>
+                          </div>
+                          <div className="h-12 flex gap-2 text-sm text-muted-foreground">
+                            <MapPin className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                            <div className="flex flex-col min-w-0 max-h-12">
+                              <span className="line-clamp-1">{getLocationNameAndAddress(trip.destination).name}</span>
+                              {getLocationNameAndAddress(trip.destination).address && (
+                                <span className="text-xs line-clamp-1 overflow-hidden">{getLocationNameAndAddress(trip.destination).address}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-2 pt-2 border-t mt-auto">
+                          <Button className="w-full bg-[#c73e1d]/90 hover:bg-[#c73e1d] border-[#c73e1d]/90 text-white" size="lg">
+                            View Details
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
       </main>
 
       <Footer />
