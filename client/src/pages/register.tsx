@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation, useSearch } from "wouter";
 import { Calendar, CheckCircle, Loader2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { EventRegistrationForm } from "@/components/event-registration-form";
 import { ProgramRegistrationForm } from "@/components/program-registration-form";
 import { TripRegistrationForm } from "@/components/trip-registration-form";
@@ -93,6 +93,19 @@ export default function Register() {
   const [preselectedProgramId, setPreselectedProgramId] = useState<string | undefined>(urlParams.programId);
   const [showPinModal, setShowPinModal] = useState(false);
   const [urlToOpen, setUrlToOpen] = useState<string | null>(null);
+  const previousSearchRef = useRef<string>(window.location.search);
+  
+  // Update state when URL parameters change (e.g., when navigating via button)
+  useEffect(() => {
+    const currentSearch = window.location.search;
+    if (currentSearch !== previousSearchRef.current) {
+      previousSearchRef.current = currentSearch;
+      const currentParams = getURLParams();
+      setPreselectedEventId(currentParams.eventId);
+      setPreselectedProgramId(currentParams.programId);
+      console.log('URL params updated - Event ID:', currentParams.eventId, 'Program ID:', currentParams.programId);
+    }
+  });
   
   const isEventRegistration = !!preselectedEventId;
   const isProgramRegistration = !!preselectedProgramId;
