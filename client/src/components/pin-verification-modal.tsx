@@ -10,7 +10,7 @@ interface PinVerificationModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onVerified: () => void;
-  registrationType?: "event" | "program" | "trip";
+  registrationType?: "event" | "program" | "trip" | "participant" | "volunteer";
 }
 
 export function PinVerificationModal({ 
