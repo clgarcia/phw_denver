@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation, useSearch } from "wouter";
 import { Calendar, CheckCircle, Loader2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useState, useLayoutEffect } from "react";
+import { useState, useEffect } from "react";
 import { EventRegistrationForm } from "@/components/event-registration-form";
 import { ProgramRegistrationForm } from "@/components/program-registration-form";
 import { TripRegistrationForm } from "@/components/trip-registration-form";
@@ -69,27 +69,30 @@ const JOIN_OPTIONS = [
   },
 ];
 
+// Parse URL parameters synchronously for initial state
+function getURLParams() {
+  if (typeof window === 'undefined') {
+    return { eventId: undefined, programId: undefined };
+  }
+  const searchParams = new URLSearchParams(window.location.search);
+  return {
+    eventId: searchParams.get("event") || undefined,
+    programId: searchParams.get("program") || undefined,
+  };
+}
+
 export default function Register() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [joinOption, setJoinOption] = useState<string>("");
-  const [preselectedEventId, setPreselectedEventId] = useState<string | undefined>(undefined);
-  const [preselectedProgramId, setPreselectedProgramId] = useState<string | undefined>(undefined);
+  
+  // Initialize with URL parameters from first render
+  const urlParams = getURLParams();
+  const [preselectedEventId, setPreselectedEventId] = useState<string | undefined>(urlParams.eventId);
+  const [preselectedProgramId, setPreselectedProgramId] = useState<string | undefined>(urlParams.programId);
   const [showPinModal, setShowPinModal] = useState(false);
   const [urlToOpen, setUrlToOpen] = useState<string | null>(null);
-  
-  // Parse query parameters from URL - useLayoutEffect ensures it runs before paint
-  useLayoutEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const eventId = searchParams.get("event") || undefined;
-    const programId = searchParams.get("program") || undefined;
-    
-    setPreselectedEventId(eventId);
-    setPreselectedProgramId(programId);
-    
-    console.log('Register page - Event ID:', eventId, 'Program ID:', programId);
-  }, []);
   
   const isEventRegistration = !!preselectedEventId;
   const isProgramRegistration = !!preselectedProgramId;
